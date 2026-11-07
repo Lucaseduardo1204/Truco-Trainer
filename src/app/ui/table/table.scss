@@ -24,7 +24,7 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 10px 38px 10px 14px; // room on the right for the leave button
+  padding: 10px 66px 10px 14px; // room on the right for the stats and leave buttons
   border-radius: 22px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
@@ -129,6 +129,118 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.stats-toggle {
+  position: absolute;
+  top: 6px;
+  right: 38px;
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 0.8rem;
+  opacity: 0.55;
+  transition:
+    opacity 0.2s,
+    border-color 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &.on {
+    opacity: 1;
+    border-color: var(--ally);
+    box-shadow: 0 0 10px var(--ally-glow);
+  }
+}
+
+// Live statistics: one row per option, best one starred.
+.stats-panel {
+  @extend %glass;
+  padding: 10px 14px;
+  border-radius: 16px;
+  animation: pop 0.25s ease-out;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+
+    strong {
+      font-size: 0.85rem;
+    }
+
+    span {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+  }
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(110px, 1.2fr) 2fr 44px 52px;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+
+    &.best {
+      background: rgba(34, 211, 238, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.45);
+    }
+  }
+
+  .star {
+    color: var(--gold);
+  }
+
+  .bar {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--violet), var(--ally));
+    }
+  }
+
+  .win {
+    text-align: right;
+    font-weight: 800;
+  }
+
+  .points {
+    text-align: right;
+    color: var(--ally);
+    font-variant-numeric: tabular-nums;
+
+    &.negative {
+      color: var(--enemy);
+    }
+  }
+
+  .legend {
+    margin: 6px 0 0;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
 }
 
 .leave {

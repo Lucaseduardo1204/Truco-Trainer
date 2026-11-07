@@ -17,6 +17,15 @@
   --gold-glow: rgba(251, 191, 36, 0.5);
   --violet: #8b5cf6;
 
+  // Chart series, in fixed order. Validated (dataviz validator) on the dark panel surface and on
+  // white paper: lightness band, chroma, colorblind separation and contrast all pass.
+  --series-1: #0891b2; // cyan
+  --series-2: #ec4899; // pink
+  --series-3: #d97706; // amber
+  --series-4: #8b5cf6; // violet
+  --chart-surface: #10122a; // ring around dots, gap between stacked bars
+  --chart-grid: rgba(255, 255, 255, 0.08);
+
   --card-face: #f8f9ff;
   --card-face-shade: #e6e8f5;
   --card-ink: #15172e;
@@ -99,6 +108,8 @@ button:disabled {
     --enemy: #be185d;
     --gold: #b45309;
     --violet: #6d28d9;
+    --chart-surface: #ffffff;
+    --chart-grid: #e3e5ef;
     color-scheme: light;
   }
 

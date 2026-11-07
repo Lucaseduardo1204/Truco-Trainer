@@ -41,8 +41,8 @@ describe('MatchHistoryService', () => {
 
   it('saves a finished match with its summary, newest first', () => {
     const service = TestBed.inject(MatchHistoryService);
-    service.save(config, played.history, 0, new Date('2026-11-01T10:00:00Z'));
-    const second = service.save(config, played.history, 0, new Date('2026-11-02T10:00:00Z'));
+    service.save(config, played.history, 0, false, new Date('2026-11-01T10:00:00Z'));
+    const second = service.save(config, played.history, 0, false, new Date('2026-11-02T10:00:00Z'));
 
     expect(service.matches()).toHaveLength(2);
     expect(service.matches()[0]).toBe(second);

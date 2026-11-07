@@ -44,6 +44,113 @@ header {
   }
 }
 
+// --- Filter row ----------------------------------------------------------------------------
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+
+  button {
+    padding: 6px 14px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    font-weight: 700;
+    font-size: 0.85rem;
+
+    &.selected {
+      border-color: rgba(34, 211, 238, 0.6);
+      background: rgba(34, 211, 238, 0.15);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ally);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+// --- Charts ----------------------------------------------------------------------------------
+
+.charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.card {
+  @extend %glass;
+  padding: 14px 16px 12px;
+  border-radius: 18px;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    margin: 2px 0 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+}
+
+.table-view {
+  summary {
+    cursor: pointer;
+    color: var(--ally);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .scroll {
+    margin-top: 8px;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  th,
+  td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--glass-border);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  th {
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  th:first-child,
+  td:first-child,
+  th:nth-child(2),
+  td:nth-child(2) {
+    text-align: left;
+  }
+}
+
 .totals {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

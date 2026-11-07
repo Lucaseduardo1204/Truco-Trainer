@@ -13,6 +13,7 @@ import {
 import { createRng, Rng } from '../engine/random';
 import { getPlayerView } from '../engine/view';
 import { MatchHistoryService, SavedMatch } from './match-history.service';
+import { StatsPanelState } from './stats-panel-state.service';
 
 /** The human always sits at seat 0. Every other seat is a bot. */
 export const HUMAN_SEAT = 0;
@@ -36,7 +37,11 @@ export const SIGNAL_DELAY_MS = 550;
 @Injectable({ providedIn: 'root' })
 export class GameService {
   private readonly history = inject(MatchHistoryService);
+  private readonly statsPanel = inject(StatsPanelState);
   private readonly matchState = signal<MatchState | null>(null);
+
+  /** The human decided at least once with the 📊 panel on during this match. */
+  private assisted = false;
 
   private readonly lastSavedState = signal<SavedMatch | null>(null);
 
@@ -84,6 +89,7 @@ export class GameService {
     this.cancelBot();
     this.botRng = createRng(randomSeed());
     this.lastSavedState.set(null);
+    this.assisted = false;
     this.matchState.set(createMatch({ ...options, seed }));
     this.scheduleBot();
   }
@@ -98,6 +104,9 @@ export class GameService {
   act(action: HandAction): void {
     if (action.seat !== HUMAN_SEAT) {
       throw new Error('act() is only for the human seat');
+    }
+    if (this.statsPanel.enabled()) {
+      this.assisted = true; // this decision was made with the statistics on screen
     }
     this.apply(action);
   }
@@ -114,7 +123,7 @@ export class GameService {
     this.matchState.set(match);
     // The action that ends the match is applied exactly once, so the match is saved once.
     if (match.finished) {
-      this.lastSavedState.set(this.history.save(match.config, match.history, HUMAN_SEAT));
+      this.lastSavedState.set(this.history.save(match.config, match.history, HUMAN_SEAT, this.assisted));
     }
     this.scheduleBot();
   }

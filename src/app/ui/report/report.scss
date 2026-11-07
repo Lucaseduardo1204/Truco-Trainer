@@ -277,6 +277,129 @@ details {
   gap: 4px;
 }
 
+// --- Simulation of a key moment ------------------------------------------------------------
+
+.simulate {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  border-radius: 10px;
+  background: transparent;
+  color: #c4b5fd;
+  font-size: 0.82rem;
+  font-weight: 700;
+
+  &:hover {
+    background: rgba(139, 92, 246, 0.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--violet);
+    outline-offset: 2px;
+  }
+}
+
+.simulation {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+
+  .simulation-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 6px 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(130px, 1.3fr) 2fr 42px 50px;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+
+    &.best {
+      background: rgba(34, 211, 238, 0.12);
+    }
+
+    &.chosen {
+      box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.6);
+    }
+
+    &.best.chosen {
+      box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.7);
+    }
+  }
+
+  .star {
+    color: var(--gold);
+  }
+
+  .you {
+    margin-left: 4px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(244, 114, 182, 0.2);
+    color: var(--enemy);
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .bar {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--violet), var(--ally));
+    }
+  }
+
+  .win {
+    text-align: right;
+    font-weight: 800;
+  }
+
+  .points {
+    text-align: right;
+    color: var(--ally);
+    font-variant-numeric: tabular-nums;
+
+    &.negative {
+      color: var(--enemy);
+    }
+  }
+
+  .legend {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+}
+
+@media print {
+  .simulate {
+    display: none;
+  }
+
+  .simulation li {
+    break-inside: avoid;
+  }
+}
+
 .clean,
 .missing {
   @extend %glass;

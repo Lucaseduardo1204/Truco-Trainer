@@ -1,0 +1,62 @@
+<div class="chart">
+  <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" [attr.aria-label]="ariaLabel()">
+    @for (tick of yTicks(); track tick) {
+      <line class="grid" [attr.x1]="margin.left" [attr.x2]="width - margin.right" [attr.y1]="y(tick)" [attr.y2]="y(tick)" />
+      <text class="tick" [attr.x]="margin.left - 6" [attr.y]="y(tick)" text-anchor="end" dominant-baseline="middle">
+        {{ tick }}
+      </text>
+    }
+    <text class="tick" [attr.x]="x(0)" [attr.y]="height - 6" text-anchor="middle">1</text>
+    @if (count() > 1) {
+      <text class="tick" [attr.x]="x(count() - 1)" [attr.y]="height - 6" text-anchor="middle">{{ count() }}</text>
+    }
+
+    @for (bar of bars(); track $index) {
+      <g [class.lifted]="hovered() === $index">
+        @for (segment of bar; track $index) {
+          <path [attr.d]="segment.d" [attr.fill]="segment.color" />
+        }
+      </g>
+    }
+
+    <!-- Hit areas: the whole column slot, focusable for the keyboard -->
+    @for (label of labels(); track $index) {
+      <rect
+        class="hit"
+        [attr.x]="x($index) - slot() / 2"
+        [attr.y]="margin.top"
+        [attr.width]="slot()"
+        [attr.height]="height - margin.top - margin.bottom"
+        tabindex="0"
+        [attr.aria-label]="label"
+        (pointerenter)="hovered.set($index)"
+        (focus)="hovered.set($index)"
+        (pointerleave)="hovered.set(null)"
+        (blur)="hovered.set(null)"
+      />
+    }
+  </svg>
+
+  @if (hovered() !== null) {
+    @let i = hovered()!;
+    <div class="tooltip" [style.left.%]="tooltipLeft(i)" [attr.data-align]="tooltipAlign(i)" role="status">
+      <span class="tooltip-title">{{ labels()[i] }} · total {{ total(i) }}</span>
+      @for (category of categories(); track category.name; let c = $index) {
+        <span class="tooltip-row">
+          <span class="key" [style.background]="category.color"></span>
+          <strong>{{ rows()[i][c] }}</strong>
+          <span>{{ category.name }}</span>
+        </span>
+      }
+    </div>
+  }
+</div>
+
+<ul class="legend">
+  @for (category of categories(); track category.name) {
+    <li>
+      <span class="legend-key" [style.background]="category.color"></span>
+      {{ category.name }}
+    </li>
+  }
+</ul>

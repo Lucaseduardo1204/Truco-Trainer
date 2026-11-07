@@ -1,0 +1,125 @@
+<nav class="topbar">
+  <a routerLink="/" class="back">← Início</a>
+</nav>
+
+<header>
+  <span class="kicker">Laboratório</span>
+  <h1>Monte a jogada</h1>
+  <p>1ª rodada · simulada com o que você saberia na hora</p>
+</header>
+
+<section class="panel settings">
+  <div class="field">
+    <span class="label">Formato</span>
+    <div class="segmented">
+      <button type="button" [class.selected]="playerCount() === 2" (click)="setPlayerCount(2)">1 x 1</button>
+      <button type="button" [class.selected]="playerCount() === 4" (click)="setPlayerCount(4)">2 x 2</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">Partida até</span>
+    <div class="segmented">
+      <button type="button" [class.selected]="target() === 12" (click)="setTarget(12)">12</button>
+      <button type="button" [class.selected]="target() === 24" (click)="setTarget(24)">24</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">Placar (nós × eles)</span>
+    <div class="score">
+      <input
+        type="number"
+        min="0"
+        [max]="target() - 1"
+        [value]="myScore()"
+        (input)="myScore.set(score($any($event.target).value))"
+        aria-label="Nossos pontos"
+      />
+      <span>×</span>
+      <input
+        type="number"
+        min="0"
+        [max]="target() - 1"
+        [value]="theirScore()"
+        (input)="theirScore.set(score($any($event.target).value))"
+        aria-label="Pontos deles"
+      />
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">O rival antes de você pediu</span>
+    <div class="segmented">
+      @for (bet of bets; track bet.label) {
+        <button type="button" [class.selected]="betAsked() === bet.value" (click)="betAsked.set(bet.value)">
+          {{ bet.label }}
+        </button>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="panel piles">
+  <div class="pile" [class.active]="picking() === 'mine'" (click)="picking.set('mine')">
+    <span class="label">Suas cartas ({{ myCards().length }}/3)</span>
+    <div class="cards">
+      @for (card of myCards(); track cardText(card)) {
+        <app-playing-card [card]="card" />
+      } @empty {
+        <span class="hint">toque nas cartas abaixo</span>
+      }
+    </div>
+  </div>
+  <div class="pile" [class.active]="picking() === 'table'" (click)="picking.set('table')">
+    <span class="label">Na mesa, antes de você ({{ tableCards().length }}/{{ playerCount() - 1 }})</span>
+    <div class="cards">
+      @for (card of tableCards(); track cardText(card)) {
+        <app-playing-card [card]="card" />
+      } @empty {
+        <span class="hint">nenhuma: toque aqui e escolha</span>
+      }
+    </div>
+  </div>
+  <p class="position">{{ positionText() }}</p>
+</section>
+
+<section class="deck" aria-label="Baralho">
+  @for (card of deck; track cardText(card)) {
+    <button
+      type="button"
+      class="deck-card"
+      [class.red]="isRed(card)"
+      [attr.data-pile]="pileOf(card)"
+      (click)="toggle(card)"
+      [attr.aria-pressed]="pileOf(card) !== null"
+    >
+      {{ cardText(card) }}
+    </button>
+  }
+</section>
+
+<section class="panel results" aria-live="polite">
+  @if (scenario(); as scenario) {
+    @if (!scenario.ok) {
+      <p class="hint">{{ scenario.error }}</p>
+    } @else if (rows(); as rows) {
+      <ol>
+        @for (row of rows; track row.label) {
+          <li [class.best]="row.best">
+            <span class="option">
+              @if (row.best) {
+                <span class="star" aria-label="Melhor opção">★</span>
+              }
+              {{ row.label }}
+            </span>
+            <span class="bar" aria-hidden="true"><span [style.width.%]="row.winPercent"></span></span>
+            <span class="win">{{ row.winPercent }}%</span>
+            <span class="points" [class.negative]="row.points.startsWith('-')">{{ row.points }}</span>
+          </li>
+        }
+      </ol>
+      <p class="legend">% = chance de ganhar a mão · número = pontos esperados</p>
+    }
+  }
+</section>

@@ -5,14 +5,40 @@
 // The rivals' remaining cards are a random handful taken from the unseen pile
 // (the rest of that pile is the partner's hand and the cards nobody got).
 
-import { Card, cardStrength, CARDS_PER_HAND, createDeck, isManilha, isSameCard } from './card';
+import { Card, cardStrength, CARDS_PER_HAND, createDeck, isManilha, isSameCard, MAX_CARD_STRENGTH } from './card';
 import { teamOf } from './hand';
 import { PlayerView } from './view';
 
+// Performance: the bot asks these questions hundreds of times about the SAME view while it
+// decides (and the simulator thousands of times). A view never changes, so its answers can be
+// remembered. A WeakMap keys the memory by the view object itself and forgets it automatically
+// once nobody holds that view anymore.
+const unseenByView = new WeakMap<PlayerView, readonly Card[]>();
+const strengthCountsByView = new WeakMap<PlayerView, readonly number[]>();
+
 /** Cards the player hasn't seen: the deck minus their own cards and every card already played. */
-export function unseenCards(view: PlayerView): Card[] {
-  const seen = [...view.ownCards, ...playedCards(view)];
-  return createDeck().filter((card) => !seen.some((s) => isSameCard(s, card)));
+export function unseenCards(view: PlayerView): readonly Card[] {
+  let unseen = unseenByView.get(view);
+  if (!unseen) {
+    const seen = [...view.ownCards, ...playedCards(view)];
+    unseen = createDeck().filter((card) => !seen.some((s) => isSameCard(s, card)));
+    unseenByView.set(view, unseen);
+  }
+  return unseen;
+}
+
+/** How many unseen cards there are of each strength: counts[s] = cards with cardStrength s. */
+function unseenStrengthCounts(view: PlayerView): readonly number[] {
+  let counts = strengthCountsByView.get(view);
+  if (!counts) {
+    const tally = new Array<number>(MAX_CARD_STRENGTH + 1).fill(0);
+    for (const card of unseenCards(view)) {
+      tally[cardStrength(card)]++;
+    }
+    counts = tally;
+    strengthCountsByView.set(view, counts);
+  }
+  return counts;
 }
 
 /** How many cards the rivals still hold, all together. */
@@ -58,14 +84,18 @@ export function chanceRivalsBeat(view: PlayerView, card: Card): number {
  * This is the chance of winning a round against a single card, which is how rounds work.
  */
 export function chanceBeatsHiddenCard(view: PlayerView, card: Card): number {
-  const unseen = unseenCards(view);
-  if (unseen.length === 0) {
+  const total = unseenCards(view).length;
+  if (total === 0) {
     return 1;
   }
+  // Read from the per-strength tally instead of comparing against every unseen card.
+  const counts = unseenStrengthCounts(view);
   const strength = cardStrength(card);
-  const weaker = unseen.filter((other) => cardStrength(other) < strength).length;
-  const ties = unseen.filter((other) => cardStrength(other) === strength).length;
-  return (weaker + ties / 2) / unseen.length;
+  let weaker = 0;
+  for (let s = 0; s < strength; s++) {
+    weaker += counts[s];
+  }
+  return (weaker + counts[strength] / 2) / total;
 }
 
 /** Chance that some rival holds at least one manilha. */

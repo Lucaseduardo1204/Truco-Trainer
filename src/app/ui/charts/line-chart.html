@@ -1,0 +1,79 @@
+<div class="chart">
+  <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" [attr.aria-label]="ariaLabel()">
+    <!-- Recessive grid + y axis ticks -->
+    @for (tick of yTicks(); track tick) {
+      <line class="grid" [attr.x1]="margin.left" [attr.x2]="width - margin.right" [attr.y1]="y(tick)" [attr.y2]="y(tick)" />
+      <text class="tick" [attr.x]="margin.left - 6" [attr.y]="y(tick)" text-anchor="end" dominant-baseline="middle">
+        {{ format(tick) }}
+      </text>
+    }
+    <!-- x axis: first and last match -->
+    <text class="tick" [attr.x]="x(0)" [attr.y]="height - 6" text-anchor="start">1</text>
+    @if (count() > 1) {
+      <text class="tick" [attr.x]="x(count() - 1)" [attr.y]="height - 6" text-anchor="end">{{ count() }}</text>
+    }
+
+    <!-- Crosshair -->
+    <!-- (index 0 is a valid match, so compare with null instead of relying on "truthy") -->
+    @if (hovered() !== null) {
+      @let i = hovered()!;
+      <line class="crosshair" [attr.x1]="x(i)" [attr.x2]="x(i)" [attr.y1]="margin.top" [attr.y2]="height - margin.bottom" />
+    }
+
+    <!-- Series -->
+    @for (s of series(); track s.name) {
+      @if (s.style === 'line') {
+        <path class="line" [attr.d]="path(s.values)" [attr.stroke]="s.color" />
+        <!-- end marker -->
+        <circle class="dot" [attr.cx]="x(s.values.length - 1)" [attr.cy]="y(s.values[s.values.length - 1])" r="4" [attr.fill]="s.color" />
+      } @else {
+        @for (v of s.values; track $index) {
+          <circle class="dot" [attr.cx]="x($index)" [attr.cy]="y(v)" r="4" [attr.fill]="s.color" />
+        }
+      }
+    }
+
+    <!-- Hit areas: one column per match, wider than any mark; focusable for the keyboard -->
+    @for (label of labels(); track $index) {
+      <rect
+        class="hit"
+        [attr.x]="x($index) - step() / 2"
+        [attr.y]="margin.top"
+        [attr.width]="step()"
+        [attr.height]="height - margin.top - margin.bottom"
+        tabindex="0"
+        [attr.aria-label]="label"
+        (pointerenter)="hovered.set($index)"
+        (focus)="hovered.set($index)"
+        (pointerleave)="hovered.set(null)"
+        (blur)="hovered.set(null)"
+      />
+    }
+  </svg>
+
+  @if (hovered() !== null) {
+    @let i = hovered()!;
+    <div class="tooltip" [style.left.%]="tooltipLeft(i)" [attr.data-align]="tooltipAlign(i)" role="status">
+      <span class="tooltip-title">{{ labels()[i] }}</span>
+      @for (s of series(); track s.name) {
+        <span class="tooltip-row">
+          <span class="key" [style.background]="s.color"></span>
+          <strong>{{ format(s.values[i]) }}</strong>
+          <span>{{ s.name }}</span>
+        </span>
+      }
+    </div>
+  }
+</div>
+
+<!-- Legend: only with 2+ series (a single series is named by the card title) -->
+@if (series().length > 1) {
+  <ul class="legend">
+    @for (s of series(); track s.name) {
+      <li>
+        <span class="legend-key" [class.dot-key]="s.style === 'dots'" [style.background]="s.color"></span>
+        {{ s.name }}
+      </li>
+    }
+  </ul>
+}

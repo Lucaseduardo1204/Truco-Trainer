@@ -92,6 +92,33 @@
             </div>
           </div>
         </details>
+
+        @if (simulationOf($index); as rows) {
+          <div class="simulation">
+            <span class="simulation-title">📊 A simulação, com o que você sabia na hora</span>
+            <ol>
+              @for (row of rows; track row.label) {
+                <li [class.best]="row.best" [class.chosen]="row.chosen">
+                  <span class="option">
+                    @if (row.best) {
+                      <span class="star" aria-label="Melhor opção">★</span>
+                    }
+                    {{ row.label }}
+                    @if (row.chosen) {
+                      <span class="you">você</span>
+                    }
+                  </span>
+                  <span class="bar" aria-hidden="true"><span [style.width.%]="row.winPercent"></span></span>
+                  <span class="win">{{ row.winPercent }}%</span>
+                  <span class="points" [class.negative]="row.points.startsWith('-')">{{ row.points }}</span>
+                </li>
+              }
+            </ol>
+            <span class="legend">% = chance de ganhar a mão · número = pontos esperados</span>
+          </div>
+        } @else {
+          <button type="button" class="simulate" (click)="simulate($index, moment)">📊 O que a simulação diz</button>
+        }
       </article>
     } @empty {
       <p class="clean">🎯 Nenhum erro detectado nessa partida. Jogou limpo!</p>

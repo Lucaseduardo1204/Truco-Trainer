@@ -1,5 +1,8 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, computed, ElementRef, inject, input } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, signal } from '@angular/core';
+import { HandAction } from '../../engine/hand';
+import { RECOMMENDED_SAMPLES, simulateOptions } from '../../stats/simulate';
+import { optionLabel } from '../option-label';
 import { RouterLink } from '@angular/router';
 import { FindingKind } from '../../feedback/detectors';
 import { analyzeMatch, KeyMoment } from '../../feedback/report';
@@ -18,6 +21,23 @@ const KINDS: Record<FindingKind, KindInfo> = {
   wastedManilha: { icon: '💸', title: 'Desperdiçou manilha' },
   burnedBestCard: { icon: '🔥', title: 'Queimou a manilha cedo' },
 };
+
+/** One option of a key moment, as the simulation saw it. */
+interface SimulatedRow {
+  readonly label: string;
+  /** 0..100 */
+  readonly winPercent: number;
+  /** Expected points, signed: "+0.42", "-1.00". */
+  readonly points: string;
+  readonly best: boolean;
+  /** What the player actually did. */
+  readonly chosen: boolean;
+}
+
+/** Same action? (Actions are small plain objects, so comparing their JSON is enough.) */
+function sameAction(a: HandAction, b: HandAction): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 /** Post-match analysis of one saved match. Rebuilt by replay from its seed + history. */
 @Component({
@@ -42,6 +62,37 @@ export class Report {
   });
 
   protected readonly formatLabel = computed(() => (this.saved()?.config.playerCount === 4 ? '2 x 2' : '1 x 1'));
+
+  /** Simulations the player asked for, by moment index. Computed on click (~0.1 s each). */
+  private readonly simulations = signal<ReadonlyMap<number, SimulatedRow[]>>(new Map());
+
+  protected simulationOf(index: number): SimulatedRow[] | null {
+    return this.simulations().get(index) ?? null;
+  }
+
+  /**
+   * Simulates every option the player had at that moment, from what they knew then.
+   * Seeded by the match and the moment, so it always shows the same numbers.
+   */
+  protected simulate(index: number, moment: KeyMoment): void {
+    const saved = this.saved();
+    if (!saved) {
+      return;
+    }
+    const { view, legal, action } = moment.finding.decision;
+    const seed = saved.config.seed + moment.finding.decision.historyIndex;
+    const result = simulateOptions(view, legal, RECOMMENDED_SAMPLES[view.playerCount], seed);
+    const rows = result.options.map((option) => ({
+      label: optionLabel(option.action, view),
+      winPercent: Math.round(option.winChance * 100),
+      points: (option.expectedPoints >= 0 ? '+' : '') + option.expectedPoints.toFixed(2),
+      best: option.action === result.best,
+      chosen: sameAction(option.action, action),
+    }));
+    const next = new Map(this.simulations());
+    next.set(index, rows);
+    this.simulations.set(next);
+  }
 
   protected kind(moment: KeyMoment): KindInfo {
     return KINDS[moment.finding.kind];

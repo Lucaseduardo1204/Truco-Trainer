@@ -4,8 +4,11 @@ Jogo de truco mineiro (manilha fixa) contra bots. O objetivo número 1 é
 **me fazer melhorar como jogador**: no fim de cada partida o app analisa
 minhas decisões e me diz onde errei e por quê. Jogar é o meio, evoluir é o fim.
 
-**Fase atual: 2 (feedback pós-partida).** Fase 1 concluída (motor, bots,
-UI 1x1/2x2, sinais). Não adiante nada das fases seguintes.
+**Fase atual: 4 (dashboard de evolução).** Fases 1, 2 e 3 concluídas (motor,
+bots, UI 1x1/2x2, sinais, feedback com 4 detectores, Monte Carlo).
+Ficaram no backlog da Fase 2, sem prazo: detectores de blefe que faltou,
+sinal do rival ignorado, erros de comunicação e mão de 11; níveis de
+dificuldade foram cancelados. Não adiante nada das fases seguintes.
 
 ---
 
@@ -180,6 +183,10 @@ Consequências práticas:
     na arena: mudar a carta de abertura conforme a resposta.
   - Arena atual contra o baseline: até 12 ~61% (1x1) / ~65% (2x2); até 24
     ~69% / ~64%.
+  - **Fraqueza conhecida (achada pelo simulador da Fase 3):** o bot corre
+    demais diante de truco; contra ele, blefar com mão podre (Q J K) perde
+    menos pontos que jogar quieto. A arena não pega porque o baseline quase
+    não blefa. Backlog, fora da Fase 3.
 
 ---
 
@@ -243,6 +250,49 @@ do jogo.
   (didático, linguagem de jogador).
 - Métricas: win rate, taxa de acerto em blefe, qualidade média das decisões.
 - Histórico salvo no `localStorage` pra acompanhar evolução.
+
+---
+
+## Painel de estatística (Fase 3)
+
+**Decisões (fechadas):**
+- Simulação Monte Carlo em `src/app/stats/`, TypeScript puro: a partir da
+  `PlayerView` (só o que o jogador sabe), sorteia milhares de distribuições
+  possíveis das cartas escondidas e joga o resto da mão com o **bot atual**
+  em todos os assentos. Usa RNG com seed (resultado reproduzível).
+- Calcula, **por jogada legal**, a chance de ganhar a mão e o valor esperado
+  em pontos, e marca a melhor.
+- Aparece em três lugares: painel **ao vivo** na mesa (liga/desliga, desligado
+  não muda nada), em cada **momento-chave** do relatório, e numa tela
+  **laboratório** pra montar situações.
+- Roda no próprio app; medir antes. Web Worker só se a tela travar, com ok.
+  (Medido após otimizar `odds.ts` com cache por view: 1000 sorteios no 1x1
+  ~70 ms, 500 no 2x2 ~115 ms. Worker não foi necessário.)
+- Laboratório (`/laboratorio`), primeira versão: só 1ª rodada (formato,
+  placar, suas cartas, cartas na mesa antes de você, aposta pedida pelo rival
+  logo antes de você — que ainda não jogou). `stats/scenario.ts` monta a
+  situação e explica o que está errado em linguagem de jogador.
+- **Fase 3 concluída** (simulador, painel ao vivo, simulação nos
+  momentos-chave, laboratório).
+
+---
+
+## Dashboard de evolução (Fase 4)
+
+**Decisões (fechadas):**
+- Gráficos em **SVG próprio** (sem biblioteca), no tema do app.
+- Gráficos: nota de qualidade por partida + média móvel (5); win rate das
+  últimas 10; erros por tipo por partida; blefes (tentativas e acertos).
+- Fica **dentro do Histórico** (`/historico`): gráficos em cima, lista embaixo.
+- Cada partida salva marca se foi **com ajuda** (painel 📊 ligado em alguma
+  decisão sua); filtro "só no seco" no dashboard.
+- Dados da evolução calculados por função pura (`src/app/evolution/`); o
+  resumo salvo de cada partida passa a guardar erros por tipo.
+- Cores dos gráficos: `--series-1..4` em `styles.scss` (ciano, rosa, âmbar,
+  violeta, um passo mais escuros que o tema), validadas pelo script do guia
+  de dataviz no fundo escuro e no papel branco. Componentes em
+  `src/app/ui/charts/` (linha e barras empilhadas, com tooltip e foco).
+- **Fase 4 concluída.**
 
 ---
 

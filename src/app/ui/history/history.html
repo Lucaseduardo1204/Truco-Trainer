@@ -7,6 +7,17 @@
   <h1>Histórico</h1>
 </header>
 
+<!-- One filter, on top: it scopes everything below -->
+<div class="filters" role="group" aria-label="Filtro">
+  <div class="segmented">
+    <button type="button" [class.selected]="!onlyUnassisted()" (click)="onlyUnassisted.set(false)">Todas</button>
+    <button type="button" [class.selected]="onlyUnassisted()" (click)="onlyUnassisted.set(true)">Só no seco</button>
+  </div>
+  @if (assistedCount() > 0) {
+    <span class="hint">{{ assistedCount() }} partida{{ assistedCount() > 1 ? 's' : '' }} com o painel 📊</span>
+  }
+</div>
+
 @let t = totals();
 <section class="totals">
   <div class="total">
@@ -28,6 +39,88 @@
   </div>
 </section>
 
+@if (points().length >= 2) {
+  <section class="charts">
+    <article class="card">
+      <h2>Qualidade das decisões</h2>
+      <p class="subtitle">% de decisões sem erro, partida a partida</p>
+      <app-line-chart
+        [series]="qualitySeries()"
+        [labels]="labels()"
+        unit="%"
+        ariaLabel="Nota de qualidade por partida e tendência"
+      />
+    </article>
+
+    <article class="card">
+      <h2>Win rate</h2>
+      <p class="subtitle">vitórias nas últimas 10 partidas</p>
+      <app-line-chart [series]="winRateSeries()" [labels]="labels()" unit="%" ariaLabel="Win rate das últimas 10 partidas" />
+    </article>
+
+    <article class="card">
+      <h2>Erros por tipo</h2>
+      <p class="subtitle">quais vícios estão sumindo</p>
+      <app-stacked-bar-chart
+        [categories]="mistakeCategories"
+        [rows]="mistakeRows()"
+        [labels]="labels()"
+        ariaLabel="Erros por tipo em cada partida"
+      />
+    </article>
+
+    <article class="card">
+      <h2>Blefes</h2>
+      <p class="subtitle">tentativas por partida, e quantas colaram</p>
+      <app-stacked-bar-chart
+        [categories]="bluffCategories"
+        [rows]="bluffRows()"
+        [labels]="labels()"
+        ariaLabel="Blefes por partida"
+      />
+    </article>
+  </section>
+
+  <!-- The same numbers as a table: nothing on the charts is hover-only -->
+  <details class="table-view">
+    <summary>Ver em tabela</summary>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Data</th>
+            <th>Nota</th>
+            <th>Tendência</th>
+            <th>Win rate</th>
+            @for (kind of mistakeKinds; track kind) {
+              <th>{{ mistakeName(kind) }}</th>
+            }
+            <th>Blefes</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of points(); track p.index) {
+            <tr>
+              <td>{{ p.index }}{{ p.assisted ? ' 📊' : '' }}</td>
+              <td>{{ date(p.playedAt) }}</td>
+              <td>{{ p.quality }}%</td>
+              <td>{{ p.qualityTrend }}%</td>
+              <td>{{ p.recentWinRate }}%</td>
+              @for (kind of mistakeKinds; track kind) {
+                <td>{{ p.mistakes[kind] }}</td>
+              }
+              <td>{{ p.bluffSuccesses }}/{{ p.bluffAttempts }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+} @else if (matches().length === 1) {
+  <p class="empty">Jogue mais uma partida pra ver a evolução nos gráficos.</p>
+}
+
 <section class="list">
   @for (match of matches(); track match.id) {
     <a class="row" [routerLink]="['/relatorio', match.id]" [attr.data-tone]="match.summary.won ? 'win' : 'lose'">
@@ -36,13 +129,19 @@
         <strong>{{ match.summary.myScore }} × {{ match.summary.theirScore }}</strong>
         <span>
           {{ match.config.playerCount === 4 ? '2x2' : '1x1' }} · até {{ match.config.targetScore }} ·
-          {{ date(match.playedAt) }}
+          {{ date(match.playedAt) }}{{ match.assisted ? ' · 📊 com ajuda' : '' }}
         </span>
       </div>
       <span class="quality">{{ match.summary.quality }}%</span>
       <span class="arrow" aria-hidden="true">→</span>
     </a>
   } @empty {
-    <p class="empty">Nenhuma partida terminada ainda. <a routerLink="/">Bora jogar!</a></p>
+    <p class="empty">
+      @if (onlyUnassisted() && assistedCount() > 0) {
+        Nenhuma partida no seco ainda.
+      } @else {
+        Nenhuma partida terminada ainda. <a routerLink="/">Bora jogar!</a>
+      }
+    </p>
   }
 </section>

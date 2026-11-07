@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HistoryEntry, MatchConfig } from '../engine/match';
+import { countMistakes, MistakeCounts } from '../evolution/evolution';
 import { analyzeMatch } from '../feedback/report';
 
 /** Small numbers for lists and the evolution panel. The full report is rebuilt by replay. */
@@ -12,6 +13,8 @@ export interface MatchSummary {
   readonly quality: number;
   readonly bluffAttempts: number;
   readonly bluffSuccesses: number;
+  /** Mistakes found, by detector. Missing in matches saved before Phase 4. */
+  readonly mistakesByKind?: MistakeCounts;
 }
 
 /** One finished match, as stored. Config (seed) + history is enough to replay it. */
@@ -23,6 +26,8 @@ export interface SavedMatch {
   readonly seat: number;
   readonly history: readonly HistoryEntry[];
   readonly summary: MatchSummary;
+  /** The player decided at least once with the 📊 panel on. Missing (= false) before Phase 4. */
+  readonly assisted?: boolean;
 }
 
 /** Versioned key: if the format ever changes, old data is simply ignored. */
@@ -43,7 +48,13 @@ export class MatchHistoryService {
   readonly matches = this.saved.asReadonly();
 
   /** Analyzes a finished match, stores it and returns what was stored. */
-  save(config: MatchConfig, history: readonly HistoryEntry[], seat: number, now = new Date()): SavedMatch {
+  save(
+    config: MatchConfig,
+    history: readonly HistoryEntry[],
+    seat: number,
+    assisted = false,
+    now = new Date(),
+  ): SavedMatch {
     const report = analyzeMatch(config, history, seat);
     const match: SavedMatch = {
       id: `${now.getTime()}-${config.seed}`,
@@ -51,6 +62,7 @@ export class MatchHistoryService {
       config,
       seat,
       history,
+      assisted,
       summary: {
         won: report.won,
         myScore: report.myScore,
@@ -59,6 +71,7 @@ export class MatchHistoryService {
         quality: report.quality,
         bluffAttempts: report.bluffs.attempts,
         bluffSuccesses: report.bluffs.successes,
+        mistakesByKind: countMistakes(report),
       },
     };
     const all = [match, ...this.saved()].slice(0, MAX_SAVED_MATCHES);

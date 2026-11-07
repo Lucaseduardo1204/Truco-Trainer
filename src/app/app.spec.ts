@@ -4,6 +4,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 import { playBotMatch } from './bot/testing';
 import { MatchConfig } from './engine/match';
+import { analyzeMatch } from './feedback/report';
 import { GameService } from './game/game.service';
 import { MatchHistoryService } from './game/match-history.service';
 
@@ -30,6 +31,33 @@ describe('App routes', () => {
     const page = harness.routeNativeElement!;
     expect(page.querySelectorAll('.my-hand .hand-card')).toHaveLength(3);
     expect(page.querySelectorAll('.arena .fan')).toHaveLength(1);
+  });
+
+  it('the 📊 button opens the live statistics panel', async () => {
+    TestBed.inject(GameService).startMatch({ targetScore: 12, playerCount: 2 }, 2);
+    const harness = await RouterTestingHarness.create('/mesa');
+    const page = harness.routeNativeElement!;
+    expect(page.querySelector('.stats-panel')).toBeNull();
+
+    (page.querySelector('.stats-toggle') as HTMLButtonElement).click();
+    harness.detectChanges();
+    expect(page.querySelector('.stats-panel')).not.toBeNull();
+  });
+
+  it('/laboratorio: pick 3 cards and see each option simulated; a table card moves you to 2nd', async () => {
+    const harness = await RouterTestingHarness.create('/laboratorio');
+    const page = harness.routeNativeElement!;
+    const deckCards = Array.from(page.querySelectorAll<HTMLButtonElement>('.deck-card'));
+    expect(deckCards).toHaveLength(27);
+
+    deckCards.slice(0, 3).forEach((button) => button.click());
+    harness.detectChanges();
+    expect(page.querySelectorAll('.results li').length).toBe(4); // 3 cards + truco
+
+    (page.querySelectorAll('.pile')[1] as HTMLElement).click(); // now picking "na mesa"
+    deckCards[10].click();
+    harness.detectChanges();
+    expect(page.querySelector('.position')?.textContent).toContain('2º');
   });
 
   it('2x2 shows three other seats around the table', async () => {
@@ -72,17 +100,57 @@ describe('App routes', () => {
       print.mockRestore();
     });
 
+    it('a key moment can be simulated: one row marked "você", one marked best', async () => {
+      // A bot match with at least one key moment.
+      let seed = 51;
+      let withMoments = playBotMatch({ ...config, seed });
+      while (analyzeMatch({ ...config, seed }, withMoments.history, 0).moments.length === 0) {
+        seed++;
+        withMoments = playBotMatch({ ...config, seed });
+      }
+      const saved = TestBed.inject(MatchHistoryService).save({ ...config, seed }, withMoments.history, 0);
+      const harness = await RouterTestingHarness.create(`/relatorio/${saved.id}`);
+      const page = harness.routeNativeElement!;
+
+      (page.querySelector('.simulate') as HTMLButtonElement).click();
+      harness.detectChanges();
+
+      const rows = page.querySelectorAll('.simulation li');
+      expect(rows.length).toBeGreaterThan(0);
+      expect(page.querySelectorAll('.simulation li.chosen')).toHaveLength(1);
+      expect(page.querySelectorAll('.simulation li.best')).toHaveLength(1);
+    });
+
     it('/relatorio with an unknown id says so', async () => {
       const harness = await RouterTestingHarness.create('/relatorio/nope');
       expect(harness.routeNativeElement?.querySelector('.missing')).not.toBeNull();
     });
 
-    it('/historico lists saved matches', async () => {
+    it('/historico lists saved matches and draws the 4 evolution charts', async () => {
       const history = TestBed.inject(MatchHistoryService);
       history.save(config, played.history, 0);
       history.save(config, played.history, 0);
       const harness = await RouterTestingHarness.create('/historico');
-      expect(harness.routeNativeElement?.querySelectorAll('.row')).toHaveLength(2);
+      const page = harness.routeNativeElement!;
+      expect(page.querySelectorAll('.row')).toHaveLength(2);
+      expect(page.querySelectorAll('app-line-chart')).toHaveLength(2);
+      expect(page.querySelectorAll('app-stacked-bar-chart')).toHaveLength(2);
+    });
+
+    it('"Só no seco" leaves out matches played with the 📊 panel', async () => {
+      const history = TestBed.inject(MatchHistoryService);
+      history.save(config, played.history, 0, false);
+      history.save(config, played.history, 0, true);
+      const harness = await RouterTestingHarness.create('/historico');
+      const page = harness.routeNativeElement!;
+      expect(page.querySelectorAll('.row')).toHaveLength(2);
+
+      const dry = [...page.querySelectorAll<HTMLButtonElement>('.filters button')].find((b) =>
+        b.textContent?.includes('Só no seco'),
+      )!;
+      dry.click();
+      harness.detectChanges();
+      expect(page.querySelectorAll('.row')).toHaveLength(1);
     });
   });
 });

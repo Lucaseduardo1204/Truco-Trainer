@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 import { GameService } from './game/game.service';
 import { History } from './ui/history/history';
+import { Lab } from './ui/lab/lab';
 import { Report } from './ui/report/report';
 import { Setup } from './ui/setup/setup';
 import { Table } from './ui/table/table';
@@ -18,5 +19,6 @@ export const routes: Routes = [
   // `:id` reaches the Report component as an input (withComponentInputBinding).
   { path: 'relatorio/:id', component: Report, title: 'Análise · Truco Trainer' },
   { path: 'historico', component: History, title: 'Histórico · Truco Trainer' },
+  { path: 'laboratorio', component: Lab, title: 'Laboratório · Truco Trainer' },
   { path: '**', redirectTo: '' },
 ];

@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { createMatch } from '../engine/match';
 import { BOT_DELAY_MS, GameService, HUMAN_SEAT, MatchOptions } from './game.service';
 import { MatchHistoryService } from './match-history.service';
+import { StatsPanelState } from './stats-panel-state.service';
 
 const ONE_VS_ONE: MatchOptions = { targetScore: 12, playerCount: 2 };
 
@@ -60,6 +61,22 @@ describe('GameService', () => {
     expect(service.match()!.history.map((entry) => entry.action.seat)).toEqual([0, 1]);
   });
 
+  it('a match where the human decided with the 📊 panel on is saved as "assisted"', () => {
+    TestBed.inject(StatsPanelState).toggle(); // panel on
+    service.startMatch(ONE_VS_ONE, 42);
+    for (let steps = 0; !service.match()!.finished && steps < 10_000; steps++) {
+      if (service.match()!.hand.finished) {
+        service.nextHand();
+      } else if (service.myActions().length > 0) {
+        const actions = service.myActions();
+        service.act(actions.find((action) => action.type === 'playCard') ?? actions[0]);
+      } else {
+        vi.advanceTimersByTime(BOT_DELAY_MS);
+      }
+    }
+    expect(service.lastSaved()!.assisted).toBe(true);
+  });
+
   it('refuses actions for the bot seat', () => {
     service.startMatch(ONE_VS_ONE, seedWhereStarterIs(1));
     expect(() => service.act({ type: 'run', seat: 1 })).toThrow();
@@ -98,5 +115,7 @@ describe('GameService', () => {
     expect(saved).toHaveLength(1);
     expect(service.lastSaved()).toBe(saved[0]);
     expect(saved[0].summary.myScore).toBe(service.match()!.scores[0]);
+    expect(saved[0].assisted).toBe(false); // the 📊 panel was off
+    expect(saved[0].summary.mistakesByKind).toBeDefined();
   });
 });

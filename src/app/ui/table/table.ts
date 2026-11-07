@@ -19,6 +19,8 @@ import {
 import { Signal } from '../../engine/signals';
 import { PlayerView } from '../../engine/view';
 import { GameService, HUMAN_SEAT } from '../../game/game.service';
+import { LiveStatsService } from '../../game/live-stats.service';
+import { optionLabel } from '../option-label';
 import { PlayingCard } from '../playing-card/playing-card';
 
 /** Where a seat is drawn. The human is always at the bottom. */
@@ -89,6 +91,16 @@ interface SignalChoice {
 }
 
 type RoundMark = 'win' | 'lose' | 'tie' | 'pending';
+
+/** One line of the statistics panel. */
+interface StatRow {
+  readonly label: string;
+  /** 0..100 */
+  readonly winPercent: number;
+  /** Expected points, signed: "+0.42", "-1.00". */
+  readonly points: string;
+  readonly best: boolean;
+}
 type Tone = 'win' | 'lose' | 'neutral';
 
 interface SeatInfo {
@@ -137,6 +149,21 @@ interface Banner {
 })
 export class Table {
   protected readonly game = inject(GameService);
+  protected readonly stats = inject(LiveStatsService);
+
+  /** Rows of the statistics panel: one per option, best first marked. */
+  protected readonly statRows = computed((): StatRow[] | null => {
+    const result = this.stats.result();
+    if (!result) {
+      return null;
+    }
+    return result.options.map((option) => ({
+      label: optionLabel(option.action, this.view()!),
+      winPercent: Math.round(option.winChance * 100),
+      points: (option.expectedPoints >= 0 ? '+' : '') + option.expectedPoints.toFixed(2),
+      best: option.action === result.best,
+    }));
+  });
   private readonly router = inject(Router);
   protected readonly view = this.game.view;
 
@@ -408,6 +435,7 @@ export class Table {
   protected playFor(card: Card): PlayCardAction | undefined {
     return this.playActions().find((action) => isSameCard(action.card, card));
   }
+
 
   protected cardLabel(card: Card): string {
     return `${card.rank} de ${SUIT_NAMES[card.suit]}`;

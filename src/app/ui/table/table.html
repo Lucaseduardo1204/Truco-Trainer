@@ -26,6 +26,17 @@
       <span class="name">{{ theirTeamName() }}</span>
     </div>
 
+    <button
+      type="button"
+      class="stats-toggle"
+      [class.on]="stats.enabled()"
+      [attr.aria-pressed]="stats.enabled()"
+      (click)="stats.toggle()"
+      title="Probabilidades ao vivo"
+      aria-label="Mostrar probabilidades"
+    >
+      📊
+    </button>
     <button type="button" class="leave" (click)="leave()" aria-label="Sair da partida">✕</button>
   </header>
 
@@ -182,6 +193,37 @@
       }
     }
   </div>
+
+  @if (stats.enabled()) {
+    <section class="stats-panel" aria-label="Probabilidades">
+      <header>
+        <strong>📊 Probabilidades</strong>
+        @if (stats.result(); as result) {
+          <span>{{ result.samples }} simulações</span>
+        }
+      </header>
+      @if (statRows(); as rows) {
+        <ol>
+          @for (row of rows; track row.label) {
+            <li [class.best]="row.best">
+              <span class="option">
+                @if (row.best) {
+                  <span class="star" aria-label="Melhor opção">★</span>
+                }
+                {{ row.label }}
+              </span>
+              <span class="bar" aria-hidden="true"><span [style.width.%]="row.winPercent"></span></span>
+              <span class="win">{{ row.winPercent }}%</span>
+              <span class="points" [class.negative]="row.points.startsWith('-')">{{ row.points }}</span>
+            </li>
+          }
+        </ol>
+        <p class="legend">% = chance de ganhar a mão · número = pontos esperados</p>
+      } @else {
+        <p class="legend">Na sua vez, aparece a chance de cada jogada.</p>
+      }
+    </section>
+  }
 
   <!-- End of match -->
   @if (matchBanner(); as result) {

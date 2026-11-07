@@ -1,0 +1,139 @@
+:host {
+  display: block;
+}
+
+.chart {
+  position: relative;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.crosshair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+// Dots carry a 2px ring in the surface color, so they stay legible over lines and each other.
+.dot {
+  stroke: var(--chart-surface);
+  stroke-width: 2;
+}
+
+.hit {
+  fill: transparent;
+  cursor: crosshair;
+  outline: none;
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(8, 9, 20, 0.92);
+  font-size: 0.78rem;
+  pointer-events: none;
+  transform: translateX(-50%);
+
+  // Near the edges: hug that edge instead of centering on the point.
+  &[data-align='start'] {
+    transform: translateX(-12px);
+  }
+
+  &[data-align='end'] {
+    transform: translateX(calc(-100% + 12px));
+  }
+}
+
+.tooltip-title {
+  margin-bottom: 2px;
+  color: var(--text-muted);
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  strong {
+    min-width: 34px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  span:last-child {
+    color: var(--text-muted);
+  }
+}
+
+// Tooltip rows key their series with a short line, not a box.
+.key {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+// Legend mirrors the mark: a line for lines, a dot for dots.
+.legend-key {
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+
+  &.dot-key {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+}
+
+// The SVG shrinks with the screen; on phones, bigger tick text keeps it readable (~10px).
+@media (max-width: 480px) {
+  .tick {
+    font-size: 19px;
+  }
+}
