@@ -1,0 +1,864 @@
+:host {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto auto;
+  gap: 10px;
+  min-height: 100dvh;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 10px 16px 16px;
+}
+
+// --- Shared glass surface ------------------------------------------------------------------
+
+%glass {
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+}
+
+// --- HUD -----------------------------------------------------------------------------------
+
+.hud {
+  @extend %glass;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 10px 38px 10px 14px; // room on the right for the leave button
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  --c: var(--ally);
+
+  &.enemy {
+    --c: var(--enemy);
+    flex-direction: row-reverse;
+  }
+
+  .name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--c);
+  }
+}
+
+// Score inside a ring that fills up towards the target.
+.ring {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(var(--c) calc(var(--p) * 1%), rgba(255, 255, 255, 0.08) 0);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c) 35%, transparent);
+  transition: background 0.4s;
+
+  strong {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--bg-0);
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stake {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--glass-border);
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+
+  small {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  strong {
+    font-size: 1.3rem;
+    font-weight: 900;
+  }
+
+  &.raised {
+    border-color: transparent;
+    background: linear-gradient(100deg, var(--gold), var(--gold-deep));
+    color: #2a1700;
+    box-shadow: 0 0 22px var(--gold-glow);
+    animation: pop 0.35s ease-out;
+
+    small {
+      color: #4a2a00;
+    }
+  }
+}
+
+.meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.badge {
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--violet), var(--enemy));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.leave {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+
+  &:hover {
+    background: var(--glass-strong);
+    color: var(--text);
+  }
+}
+
+// --- Arena ---------------------------------------------------------------------------------
+
+.arena {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'top top top'
+    'left center right'
+    'bottom bottom bottom';
+  gap: 6px;
+  min-height: 320px;
+  padding: 14px 10px 10px;
+  border-radius: 36px;
+  // Gradient border: cyan (my side) fading into pink (their side).
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(ellipse at 50% 55%, #171a3a 0%, #0c0e22 60%, #080915 100%) padding-box,
+    linear-gradient(0deg, var(--ally), rgba(139, 92, 246, 0.4) 50%, var(--enemy)) border-box;
+  box-shadow:
+    0 0 40px rgba(139, 92, 246, 0.18),
+    inset 0 0 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+
+  // Faint grid on the playing surface.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    pointer-events: none;
+  }
+}
+
+// --- Seats ---------------------------------------------------------------------------------
+
+.seat {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  --c: var(--ally);
+
+  &.enemy {
+    --c: var(--enemy);
+  }
+
+  &[data-pos='top'] {
+    grid-area: top;
+  }
+  &[data-pos='left'] {
+    grid-area: left;
+  }
+  &[data-pos='right'] {
+    grid-area: right;
+  }
+  &[data-pos='bottom'] {
+    grid-area: bottom;
+  }
+}
+
+// Face-down cards of the bots, overlapped like a held hand.
+.fan {
+  display: flex;
+  justify-content: center;
+  min-height: calc(var(--card-width) * 1.4);
+  --card-width: clamp(34px, 9vw, 50px);
+
+  app-playing-card + app-playing-card {
+    margin-left: calc(var(--card-width) * -0.5);
+  }
+
+  app-playing-card:nth-child(1):not(:only-child) {
+    transform: rotate(-9deg) translateY(2px);
+  }
+  app-playing-card:nth-child(3) {
+    transform: rotate(9deg) translateY(2px);
+  }
+}
+
+.player {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-border);
+  white-space: nowrap;
+
+  .name {
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+}
+
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c) 22%, var(--bg-0));
+  border: 2px solid var(--c);
+  color: var(--c);
+  font-size: 0.7rem;
+  font-weight: 900;
+
+  // Spinning ring around whoever must act.
+  &.acting::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    padding: 2px;
+    background: conic-gradient(from var(--angle), transparent 0 55%, var(--gold) 100%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: spin 1.1s linear infinite;
+  }
+}
+
+// Signal the human knows about, pinned to the avatar.
+.signal-badge {
+  position: absolute;
+  right: -10px;
+  bottom: -8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-0);
+  border: 1.5px solid var(--ally);
+  font-size: 0.8rem;
+  animation: bubble-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  // A rival's signal the human caught.
+  &.caught {
+    border-color: var(--enemy);
+    box-shadow: 0 0 10px var(--enemy-glow);
+  }
+}
+
+// Signal buttons (signal round, human's turn).
+.signals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+  animation: pop 0.25s ease-out;
+}
+
+.signal {
+  @extend %glass;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  transition:
+    transform 0.12s,
+    border-color 0.2s,
+    background 0.2s;
+
+  .emoji {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  strong {
+    font-size: 0.85rem;
+  }
+
+  small {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  &:hover {
+    border-color: var(--ally);
+    background: var(--glass-strong);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ally);
+    outline-offset: 2px;
+  }
+}
+
+.chip {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #2a1700;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bubble {
+  position: absolute;
+  z-index: 3;
+  top: -4px;
+  left: 50%;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--gold), var(--gold-deep));
+  color: #2a1700;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 0 26px var(--gold-glow);
+  transform: translateX(-50%);
+  animation: bubble-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.seat[data-pos='bottom'] .bubble {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+// Side seats: keep the bubble inside the arena.
+.seat[data-pos='left'] .bubble {
+  left: 0;
+  transform: none;
+}
+
+.seat[data-pos='right'] .bubble {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+// --- Center: rounds, cards in play, hand result ----------------------------------------------
+
+.center {
+  position: relative;
+  z-index: 1;
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.rounds {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    width: 22px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    transition:
+      background 0.3s,
+      box-shadow 0.3s;
+
+    &.win {
+      background: var(--ally);
+      box-shadow: 0 0 10px var(--ally-glow);
+    }
+
+    &.lose {
+      background: var(--enemy);
+      box-shadow: 0 0 10px var(--enemy-glow);
+    }
+
+    &.tie {
+      background: var(--text-muted);
+    }
+  }
+}
+
+.trick {
+  // Fixed-size cells, so each card lands on its player's side even when alone.
+  // Rows are shorter than a card: neighbouring cards overlap a little, like a real pile.
+  display: grid;
+  grid-template-columns: repeat(3, var(--card-width));
+  grid-template-rows: repeat(3, calc(var(--card-width) * 0.8));
+  grid-template-areas:
+    '. top .'
+    'left . right'
+    '. bottom .';
+  align-items: center;
+  justify-items: center;
+  --card-width: clamp(50px, 13vw, 72px);
+}
+
+.arena:not(.four) .trick {
+  // 1x1: one column, the two cards facing each other.
+  grid-template-columns: var(--card-width);
+  grid-template-rows: repeat(2, calc(var(--card-width) * 1.1));
+  grid-template-areas:
+    'top'
+    'bottom';
+}
+
+.played {
+  border-radius: 10px;
+  animation: play-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  transition: box-shadow 0.3s;
+
+  &[data-pos='top'] {
+    grid-area: top;
+    --from-y: -60px;
+    rotate: -3deg;
+  }
+  &[data-pos='bottom'] {
+    grid-area: bottom;
+    --from-y: 60px;
+    rotate: 2deg;
+  }
+  &[data-pos='left'] {
+    grid-area: left;
+    --from-x: -60px;
+    rotate: -7deg;
+  }
+  &[data-pos='right'] {
+    grid-area: right;
+    --from-x: 60px;
+    rotate: 7deg;
+  }
+
+  &.winner {
+    z-index: 1;
+    box-shadow:
+      0 0 0 2px var(--enemy),
+      0 0 26px var(--enemy-glow);
+
+    &.ally {
+      box-shadow:
+        0 0 0 2px var(--ally),
+        0 0 26px var(--ally-glow);
+    }
+  }
+}
+
+// Hand result, floating over the center of the arena.
+.banner {
+  @extend %glass;
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+  padding: 16px 22px;
+  border-radius: 20px;
+  background: rgba(10, 11, 26, 0.75);
+  text-align: center;
+  transform: translate(-50%, -50%);
+  animation: banner-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --c: var(--text-muted);
+
+  &[data-tone='win'] {
+    --c: var(--ally);
+  }
+  &[data-tone='lose'] {
+    --c: var(--enemy);
+  }
+
+  border-color: var(--c);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--c) 35%, transparent);
+
+  strong {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: var(--c);
+  }
+
+  span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .btn {
+    margin-top: 6px;
+  }
+}
+
+// --- Status, buttons and the human's hand ------------------------------------------------------
+
+.status {
+  margin: 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+
+  &.my-turn {
+    color: var(--ally);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-shadow: 0 0 14px var(--ally-glow);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.btn {
+  @extend %glass;
+  padding: 11px 22px;
+  border-radius: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  animation: pop 0.25s ease-out;
+  transition:
+    transform 0.12s,
+    box-shadow 0.2s,
+    background 0.2s;
+
+  &:hover {
+    background: var(--glass-strong);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  &.primary {
+    border-color: transparent;
+    background: linear-gradient(100deg, var(--gold), var(--gold-deep));
+    color: #2a1700;
+    box-shadow: 0 0 24px var(--gold-glow);
+  }
+
+  // Asking for truco: the big, tempting button.
+  &.raise {
+    font-size: 1.2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    animation:
+      pop 0.25s ease-out,
+      glow 1.6s ease-in-out infinite;
+  }
+
+  &.accept {
+    border-color: var(--ally);
+    color: var(--ally);
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.2);
+  }
+
+  &.run {
+    border-color: rgba(244, 114, 182, 0.6);
+    color: var(--enemy);
+  }
+
+  &.big {
+    padding: 14px 34px;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+.my-hand {
+  display: flex;
+  justify-content: center;
+  min-height: calc(var(--card-width) * 1.4 + 20px);
+  padding-top: 16px;
+}
+
+// The human's cards, fanned: --o is -1, 0, 1 (left, middle, right).
+.hand-card {
+  margin: 0 -4px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 12px;
+  rotate: calc(var(--o, 0) * 7deg);
+  translate: 0 calc(var(--o, 0) * var(--o, 0) * 8px);
+  animation: deal 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+  transition:
+    transform 0.18s ease,
+    filter 0.2s,
+    box-shadow 0.2s;
+
+  &:not(:disabled):hover,
+  &:not(:disabled):focus-visible {
+    z-index: 1;
+    transform: translateY(-18px) scale(1.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ally);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    filter: brightness(0.6) saturate(0.7);
+  }
+}
+
+// Playable cards glow when it's the human's turn.
+.my-hand.my-turn .hand-card:not(:disabled) {
+  box-shadow: 0 0 22px var(--ally-glow);
+}
+
+// --- End of match overlay ------------------------------------------------------------------------
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(4, 5, 12, 0.72);
+  backdrop-filter: blur(10px);
+  animation: fade-in 0.4s ease-out;
+  --c: var(--ally);
+
+  &[data-tone='lose'] {
+    --c: var(--enemy);
+  }
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  animation: banner-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  .kicker {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .headline {
+    font-size: clamp(3.2rem, 16vw, 6rem);
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    background: linear-gradient(100deg, #fff 10%, var(--c) 60%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 30px color-mix(in srgb, var(--c) 55%, transparent));
+  }
+
+  .detail {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .stat {
+    @extend %glass;
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    padding: 10px 14px;
+    border-radius: 16px;
+
+    strong {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--c);
+    }
+
+    span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  }
+}
+
+// --- Animations ----------------------------------------------------------------------------------
+
+@keyframes play-in {
+  from {
+    opacity: 0;
+    translate: var(--from-x, 0) var(--from-y, 0);
+    scale: 0.8;
+  }
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.9);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    scale: 0.7;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes glow {
+  50% {
+    box-shadow: 0 0 40px var(--gold-glow);
+  }
+}
+
+@keyframes spin {
+  to {
+    --angle: 360deg;
+  }
+}
+
+// --- Narrow screens ------------------------------------------------------------------------------
+
+@media (max-width: 480px) {
+  .arena {
+    border-radius: 26px;
+    padding: 10px 4px 8px;
+  }
+
+  .arena.four .fan {
+    --card-width: 30px;
+  }
+
+  // Side seats: avatar only (the "R1"/"R2" inside already says who it is).
+  .seat[data-pos='left'] .player,
+  .seat[data-pos='right'] .player {
+    flex-direction: column;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 14px;
+
+    .name {
+      display: none;
+    }
+  }
+
+  .ring {
+    width: 46px;
+
+    strong {
+      width: 37px;
+      font-size: 1.2rem;
+    }
+  }
+
+  .team .name {
+    display: none;
+  }
+}

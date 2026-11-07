@@ -1,0 +1,48 @@
+<nav class="topbar">
+  <a routerLink="/" class="back">← Início</a>
+</nav>
+
+<header>
+  <span class="kicker">Sua evolução</span>
+  <h1>Histórico</h1>
+</header>
+
+@let t = totals();
+<section class="totals">
+  <div class="total">
+    <span class="label">Partidas</span>
+    <strong>{{ t.played }}</strong>
+  </div>
+  <div class="total">
+    <span class="label">Win rate</span>
+    <strong>{{ t.winRate === null ? '–' : t.winRate + '%' }}</strong>
+  </div>
+  <div class="total">
+    <span class="label">Nota média</span>
+    <strong>{{ t.averageQuality === null ? '–' : t.averageQuality + '%' }}</strong>
+  </div>
+  <div class="total">
+    <span class="label">Blefes que colaram</span>
+    <strong>{{ t.bluffRate === null ? '–' : t.bluffRate + '%' }}</strong>
+    <span class="hint">{{ t.bluffAttempts }} tentativas</span>
+  </div>
+</section>
+
+<section class="list">
+  @for (match of matches(); track match.id) {
+    <a class="row" [routerLink]="['/relatorio', match.id]" [attr.data-tone]="match.summary.won ? 'win' : 'lose'">
+      <span class="result">{{ match.summary.won ? 'V' : 'D' }}</span>
+      <div class="info">
+        <strong>{{ match.summary.myScore }} × {{ match.summary.theirScore }}</strong>
+        <span>
+          {{ match.config.playerCount === 4 ? '2x2' : '1x1' }} · até {{ match.config.targetScore }} ·
+          {{ date(match.playedAt) }}
+        </span>
+      </div>
+      <span class="quality">{{ match.summary.quality }}%</span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  } @empty {
+    <p class="empty">Nenhuma partida terminada ainda. <a routerLink="/">Bora jogar!</a></p>
+  }
+</section>

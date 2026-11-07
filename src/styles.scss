@@ -1,0 +1,131 @@
+// Global design tokens. Components use these variables instead of raw colors.
+:root {
+  --bg-0: #06070f;
+  --bg-1: #0d0f22;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --text: #eef0ff;
+  --text-muted: #9aa0c8;
+
+  --ally: #22d3ee; // my team
+  --ally-glow: rgba(34, 211, 238, 0.45);
+  --enemy: #f472b6; // the other team
+  --enemy-glow: rgba(244, 114, 182, 0.45);
+  --gold: #fbbf24;
+  --gold-deep: #f97316;
+  --gold-glow: rgba(251, 191, 36, 0.5);
+  --violet: #8b5cf6;
+
+  --card-face: #f8f9ff;
+  --card-face-shade: #e6e8f5;
+  --card-ink: #15172e;
+  --card-red: #e11d48;
+
+  --font-ui: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --card-width: clamp(64px, 18vw, 96px);
+  --radius: 14px;
+
+  color-scheme: dark;
+}
+
+// Animatable angle for the spinning rings and holographic borders.
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  font-family: var(--font-ui);
+  color: var(--text);
+  background: radial-gradient(ellipse at 50% 0%, var(--bg-1) 0%, var(--bg-0) 70%);
+  background-attachment: fixed;
+}
+
+// Slow "aurora" glow behind everything.
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.22), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.16), transparent 40%),
+    radial-gradient(circle at 60% 85%, rgba(244, 114, 182, 0.14), transparent 45%);
+  filter: blur(40px);
+  animation: aurora 24s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes aurora {
+  to {
+    transform: translate3d(4%, -3%, 0) rotate(8deg) scale(1.08);
+  }
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+// Printing (the PDF report): white paper, dark ink, no glow or animation.
+@media print {
+  :root {
+    --text: #15172e;
+    --text-muted: #5b5f7a;
+    --glass: #ffffff;
+    --glass-strong: #ffffff;
+    --glass-border: #d6d8e6;
+    --ally: #0e7490;
+    --enemy: #be185d;
+    --gold: #b45309;
+    --violet: #6d28d9;
+    color-scheme: light;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  body::before {
+    display: none;
+  }
+
+  * {
+    animation: none !important;
+    transition: none !important;
+    backdrop-filter: none !important;
+    // Keep card faces and colored accents in the PDF.
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

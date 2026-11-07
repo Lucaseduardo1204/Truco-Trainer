@@ -1,0 +1,356 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 16px 40px;
+}
+
+%glass {
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf {
+  @extend %glass;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+
+  &:hover {
+    border-color: var(--ally);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ally);
+    outline-offset: 2px;
+  }
+}
+
+// Only shown on paper.
+.print-brand {
+  display: none;
+}
+
+.back {
+  padding: 6px 12px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--glass);
+    color: var(--text);
+  }
+}
+
+// --- Summary -------------------------------------------------------------------------------
+
+.summary {
+  text-align: center;
+  --c: var(--ally);
+
+  &[data-tone='lose'] {
+    --c: var(--enemy);
+  }
+
+  .kicker {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  h1 {
+    margin: 4px 0;
+    font-size: clamp(2.6rem, 12vw, 4rem);
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    background: linear-gradient(100deg, #fff 10%, var(--c) 60%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .score {
+    margin: 0;
+    font-size: 1.4rem;
+
+    strong {
+      font-weight: 900;
+    }
+
+    span {
+      margin-left: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+  }
+}
+
+// --- Metrics -------------------------------------------------------------------------------
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.metric {
+  @extend %glass;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px;
+  border-radius: 18px;
+  --c: var(--text);
+
+  &[data-tone='good'] {
+    --c: var(--ally);
+  }
+  &[data-tone='ok'] {
+    --c: var(--gold);
+  }
+  &[data-tone='bad'] {
+    --c: var(--enemy);
+  }
+
+  .label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  strong {
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: var(--c);
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+}
+
+// --- Key moments ---------------------------------------------------------------------------
+
+.moments {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h2 {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+}
+
+.moment {
+  @extend %glass;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border-left: 3px solid var(--enemy);
+  animation: rise 0.35s ease-out both;
+
+  &[data-kind='bluff'] {
+    border-left-color: var(--violet);
+  }
+
+  > header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .icon {
+    font-size: 1.6rem;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .when {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .tag {
+    margin-left: auto;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(244, 114, 182, 0.18);
+    color: var(--enemy);
+    font-size: 0.75rem;
+    font-weight: 800;
+
+    &.ok {
+      background: rgba(34, 211, 238, 0.18);
+      color: var(--ally);
+    }
+  }
+}
+
+dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+
+  dt {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 1px 0 0;
+    line-height: 1.4;
+  }
+}
+
+details {
+  margin-top: 10px;
+
+  summary {
+    cursor: pointer;
+    color: var(--ally);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+.hands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  --card-width: 46px;
+}
+
+.hand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  > span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  em {
+    font-style: normal;
+    opacity: 0.7;
+  }
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.clean,
+.missing {
+  @extend %glass;
+  padding: 18px;
+  border-radius: 18px;
+  text-align: center;
+
+  a {
+    color: var(--ally);
+  }
+}
+
+// --- Paper (PDF) -----------------------------------------------------------------------------
+
+@media print {
+  :host {
+    max-width: none;
+    padding: 0;
+    gap: 12px;
+  }
+
+  .topbar,
+  details summary {
+    display: none;
+  }
+
+  .print-brand {
+    display: block;
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  // Gradient text doesn't print well: use solid ink.
+  .summary h1 {
+    background: none;
+    color: var(--c);
+  }
+
+  .metric,
+  .moment,
+  .clean {
+    box-shadow: none;
+  }
+
+  // Never split one key moment across two pages.
+  .moment {
+    break-inside: avoid;
+  }
+
+  .hands {
+    margin-top: 6px;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics {
+    gap: 6px;
+  }
+
+  .metric {
+    padding: 10px;
+
+    strong {
+      font-size: 1.4rem;
+    }
+  }
+}

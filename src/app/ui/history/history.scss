@@ -1,0 +1,160 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 16px 40px;
+}
+
+%glass {
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+}
+
+.back {
+  padding: 6px 12px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--glass);
+    color: var(--text);
+  }
+}
+
+header {
+  text-align: center;
+
+  .kicker {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ally);
+  }
+
+  h1 {
+    margin: 2px 0 0;
+    font-size: 2.6rem;
+    font-weight: 900;
+  }
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.total {
+  @extend %glass;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 16px;
+
+  .label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  strong {
+    font-size: 1.6rem;
+    font-weight: 900;
+  }
+
+  .hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  @extend %glass;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    transform 0.15s;
+  --c: var(--ally);
+
+  &[data-tone='lose'] {
+    --c: var(--enemy);
+  }
+
+  &:hover {
+    border-color: var(--c);
+    transform: translateX(3px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--c);
+    outline-offset: 2px;
+  }
+}
+
+.result {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid var(--c);
+  color: var(--c);
+  font-weight: 900;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+
+  span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+}
+
+.quality {
+  margin-left: auto;
+  font-weight: 800;
+}
+
+.arrow {
+  color: var(--text-muted);
+}
+
+.empty {
+  @extend %glass;
+  padding: 18px;
+  border-radius: 16px;
+  text-align: center;
+
+  a {
+    color: var(--ally);
+  }
+}
+
+@media (max-width: 480px) {
+  .totals {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

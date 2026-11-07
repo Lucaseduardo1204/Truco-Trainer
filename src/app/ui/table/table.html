@@ -1,0 +1,198 @@
+@if (view(); as view) {
+  <!-- HUD: scores as progress rings, stake in the middle -->
+  <header class="hud">
+    <div class="team ally">
+      <div class="ring" [style.--p]="progress(myScore())">
+        <strong>{{ myScore() }}</strong>
+      </div>
+      <span class="name">{{ myTeamName() }}</span>
+    </div>
+
+    <div class="info">
+      <span class="stake" [class.raised]="view.stake > 1">
+        <small>valendo</small>
+        <strong>{{ view.stake }}</strong>
+      </span>
+      <span class="meta">Mão {{ view.handNumber }} · até {{ view.targetScore }}</span>
+      @if (modeLabel()) {
+        <span class="badge">{{ modeLabel() }}</span>
+      }
+    </div>
+
+    <div class="team enemy">
+      <div class="ring" [style.--p]="progress(theirScore())">
+        <strong>{{ theirScore() }}</strong>
+      </div>
+      <span class="name">{{ theirTeamName() }}</span>
+    </div>
+
+    <button type="button" class="leave" (click)="leave()" aria-label="Sair da partida">✕</button>
+  </header>
+
+  <!-- Arena: seats around the cards in play -->
+  <div class="arena" [class.four]="view.playerCount === 4">
+    @for (seat of otherSeats(); track seat.seat) {
+      <div class="seat" [attr.data-pos]="seat.position" [class.ally]="seat.ally" [class.enemy]="!seat.ally">
+        <div class="fan">
+          @for (slot of seat.slots; track slot) {
+            <app-playing-card />
+          }
+        </div>
+        <div class="player">
+          <span class="avatar" [class.acting]="seat.isActing">
+            {{ seat.avatar }}
+            @if (seat.signal; as signal) {
+              <span
+                class="signal-badge"
+                [class.caught]="signal.caught"
+                [attr.title]="(signal.caught ? 'Flagrado: ' : '') + signal.gesture + ' = ' + signal.meaning"
+                >{{ signal.emoji }}</span
+              >
+            }
+          </span>
+          <span class="name">{{ seat.name }}</span>
+          @if (seat.isStarter) {
+            <span class="chip">mão</span>
+          }
+        </div>
+        @if (seat.bubble) {
+          <div class="bubble">{{ seat.bubble }}</div>
+        }
+      </div>
+    }
+
+    <div class="center">
+      <ol class="rounds" aria-label="Rodadas">
+        @for (mark of roundMarks(); track $index) {
+          <li [class]="mark" [attr.aria-label]="'Rodada ' + ($index + 1) + ': ' + mark"></li>
+        }
+      </ol>
+
+      <div class="trick">
+        @for (play of tablePlays(); track play.seat) {
+          <div
+            class="played"
+            [attr.data-pos]="play.position"
+            [class.winner]="play.winner"
+            [class.ally]="play.ally"
+          >
+            <app-playing-card [card]="play.card" />
+          </div>
+        }
+      </div>
+
+      @if (handBanner(); as banner) {
+        <div class="banner" [attr.data-tone]="banner.tone">
+          <strong>{{ banner.title }}</strong>
+          @if (banner.detail) {
+            <span>{{ banner.detail }}</span>
+          }
+          <button type="button" class="btn primary" (click)="game.nextHand()">Próxima mão</button>
+        </div>
+      }
+    </div>
+
+    @if (me(); as me) {
+      <div class="seat" data-pos="bottom" [class.ally]="true">
+        <div class="player">
+          <span class="avatar" [class.acting]="me.isActing">
+            {{ me.avatar }}
+            @if (me.signal; as signal) {
+              <span class="signal-badge" [attr.title]="'Seu sinal: ' + signal.meaning">{{ signal.emoji }}</span>
+            }
+          </span>
+          <span class="name">Você</span>
+          @if (me.isStarter) {
+            <span class="chip">mão</span>
+          }
+        </div>
+        @if (me.bubble) {
+          <div class="bubble">{{ me.bubble }}</div>
+        }
+      </div>
+    }
+  </div>
+
+  <p class="status" aria-live="polite" [class.my-turn]="status() === 'Sua vez'">{{ status() }}</p>
+
+  @if (signalChoices().length > 0) {
+    <div class="signals" role="group" aria-label="Sinais">
+      @for (choice of signalChoices(); track choice.label) {
+        <button type="button" class="signal" (click)="act(choice.action)" [attr.aria-label]="choice.label">
+          <span class="emoji">{{ choice.emoji }}</span>
+          <strong>{{ choice.label }}</strong>
+          <small>{{ choice.hint }}</small>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="actions">
+    @if (raiseAction(); as raise) {
+      <button type="button" class="btn primary raise" (click)="act(raise)">{{ raiseLabel() }}</button>
+    }
+    @if (acceptAction(); as accept) {
+      <button type="button" class="btn accept" (click)="act(accept)">{{ acceptLabel() }}</button>
+    }
+    @if (runAction(); as run) {
+      <button type="button" class="btn run" (click)="act(run)">Correr</button>
+    }
+  </div>
+
+  <div class="my-hand" [class.my-turn]="playActions().length > 0">
+    @if (blind()) {
+      @for (slot of me()?.slots ?? []; track slot) {
+        <button
+          type="button"
+          class="hand-card"
+          [style.--i]="slot"
+          [style.--o]="fanOffset(slot, me()?.slots?.length ?? 0)"
+          [disabled]="!playActions()[slot]"
+          (click)="act(playActions()[slot])"
+          aria-label="Carta virada"
+        >
+          <app-playing-card />
+        </button>
+      }
+    } @else {
+      @for (card of view.ownCards; track card.rank + card.suit; let i = $index, count = $count) {
+        <button
+          type="button"
+          class="hand-card"
+          [style.--i]="i"
+          [style.--o]="fanOffset(i, count)"
+          [disabled]="!playFor(card)"
+          (click)="act(playFor(card))"
+          [attr.aria-label]="cardLabel(card)"
+        >
+          <app-playing-card [card]="card" />
+        </button>
+      }
+    }
+  </div>
+
+  <!-- End of match -->
+  @if (matchBanner(); as result) {
+    <div class="overlay" [attr.data-tone]="result.tone" role="dialog" aria-modal="true" aria-label="Fim de partida">
+      <div class="result">
+        <span class="kicker">Fim de partida</span>
+        <strong class="headline">{{ result.title }}</strong>
+        <span class="detail">{{ result.detail }}</span>
+        @if (game.lastSaved(); as saved) {
+          <div class="stats">
+            <div class="stat">
+              <strong>{{ saved.summary.quality }}%</strong>
+              <span>decisões boas</span>
+            </div>
+            <div class="stat">
+              <strong>{{ saved.summary.bluffSuccesses }}/{{ saved.summary.bluffAttempts }}</strong>
+              <span>blefes que colaram</span>
+            </div>
+          </div>
+          <button type="button" class="btn primary big" (click)="openReport(saved.id)">Ver análise</button>
+        }
+        <button type="button" class="btn" (click)="leave()">Nova partida</button>
+      </div>
+    </div>
+  }
+}

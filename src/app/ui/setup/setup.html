@@ -1,0 +1,65 @@
+<section class="hero">
+  <div class="fan" aria-hidden="true">
+    @for (card of heroCards; track $index) {
+      <div class="fan-card" [style.--i]="$index">
+        <app-playing-card [card]="card" />
+      </div>
+    }
+  </div>
+
+  <h1>
+    <span class="kicker">Truco mineiro</span>
+    <span class="title">TRUCO<br />TRAINER</span>
+  </h1>
+  <p class="subtitle">Manilha fixa · baralho limpo · jogue, erre e evolua</p>
+</section>
+
+<section class="panel">
+  <div class="group">
+    <h2>Formato</h2>
+    <div class="segmented" role="radiogroup" aria-label="Formato">
+      @for (format of formats; track format.playerCount) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="playerCount() === format.playerCount"
+          [class.selected]="playerCount() === format.playerCount"
+          (click)="playerCount.set(format.playerCount)"
+        >
+          <strong>{{ format.label }}</strong>
+          <span>{{ format.hint }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>Partida até</h2>
+    <div class="segmented" role="radiogroup" aria-label="Pontos da partida">
+      @for (option of targets; track option) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="target() === option"
+          [class.selected]="target() === option"
+          (click)="target.set(option)"
+        >
+          <strong>{{ option }}</strong>
+          <span>pontos</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <button type="button" class="start" (click)="start()">
+    Jogar
+    <span class="arrow" aria-hidden="true">→</span>
+  </button>
+
+  <a class="history-link" routerLink="/historico">
+    📈 Histórico e evolução
+    @if (savedMatches().length > 0) {
+      <span class="count">{{ savedMatches().length }}</span>
+    }
+  </a>
+</section>

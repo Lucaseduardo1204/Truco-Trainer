@@ -1,0 +1,102 @@
+<nav class="topbar">
+  <a routerLink="/" class="back">← Início</a>
+  <div class="tools">
+    @if (report()) {
+      <button type="button" class="pdf" (click)="downloadPdf()">📄 Baixar PDF</button>
+    }
+    <a routerLink="/historico" class="back">Histórico</a>
+  </div>
+</nav>
+
+<p class="print-brand">Truco Trainer · relatório de partida</p>
+
+@if (report(); as report) {
+  @let match = saved()!;
+
+  <header class="summary" [attr.data-tone]="report.won ? 'win' : 'lose'">
+    <span class="kicker">Análise da partida · {{ formatLabel() }} · {{ date(match.playedAt) }}</span>
+    <h1>{{ report.won ? 'Vitória' : 'Derrota' }}</h1>
+    <p class="score">
+      <strong>{{ report.myScore }}</strong> × <strong>{{ report.theirScore }}</strong>
+      <span>em {{ report.handsPlayed }} mãos</span>
+    </p>
+  </header>
+
+  <section class="metrics">
+    <div class="metric" [attr.data-tone]="qualityTone(report.quality)">
+      <span class="label">Qualidade</span>
+      <strong>{{ report.quality }}%</strong>
+      <span class="hint">{{ report.judgedDecisions - report.mistakes }} de {{ report.judgedDecisions }} decisões sem erro</span>
+    </div>
+    <div class="metric">
+      <span class="label">Erros</span>
+      <strong>{{ report.mistakes }}</strong>
+      <span class="hint">decisões com erro</span>
+    </div>
+    <div class="metric">
+      <span class="label">Blefes</span>
+      <strong>{{ report.bluffs.successes }}/{{ report.bluffs.attempts }}</strong>
+      <span class="hint">colaram (rival correu)</span>
+    </div>
+  </section>
+
+  <section class="moments">
+    <h2>Momentos-chave</h2>
+
+    @for (moment of report.moments; track $index) {
+      <article class="moment" [attr.data-kind]="moment.finding.kind">
+        <header>
+          <span class="icon" aria-hidden="true">{{ kind(moment).icon }}</span>
+          <div>
+            <h3>{{ kind(moment).title }}</h3>
+            <span class="when">Mão {{ moment.finding.decision.handNumber }}</span>
+          </div>
+          @if (moment.bluffWorked !== null) {
+            <span class="tag" [class.ok]="moment.bluffWorked">{{ moment.bluffWorked ? 'Colou' : 'Não colou' }}</span>
+          }
+        </header>
+
+        <dl>
+          <div>
+            <dt>O que você fez</dt>
+            <dd>{{ moment.finding.did }}</dd>
+          </div>
+          <div>
+            <dt>Melhor</dt>
+            <dd>{{ moment.finding.better }}</dd>
+          </div>
+          <div>
+            <dt>Por quê</dt>
+            <dd>{{ moment.finding.why }}</dd>
+          </div>
+        </dl>
+
+        <details>
+          <summary>Ver as cartas</summary>
+          <div class="hands">
+            <div class="hand">
+              <span>Você tinha</span>
+              <div class="cards">
+                @for (card of moment.finding.decision.view.ownCards; track $index) {
+                  <app-playing-card [card]="card" />
+                }
+              </div>
+            </div>
+            <div class="hand">
+              <span>Eles tinham <em>(você não sabia)</em></span>
+              <div class="cards">
+                @for (card of moment.rivalCards; track $index) {
+                  <app-playing-card [card]="card" />
+                }
+              </div>
+            </div>
+          </div>
+        </details>
+      </article>
+    } @empty {
+      <p class="clean">🎯 Nenhum erro detectado nessa partida. Jogou limpo!</p>
+    }
+  </section>
+} @else {
+  <p class="missing">Partida não encontrada. <a routerLink="/historico">Ver histórico</a></p>
+}

@@ -1,0 +1,219 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  min-height: 100dvh;
+  padding: 24px 16px;
+}
+
+// --- Hero --------------------------------------------------------------------------------
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fan {
+  position: relative;
+  height: calc(var(--card-width) * 1.55);
+  width: calc(var(--card-width) * 2.6);
+  margin-bottom: 22px;
+  --card-width: clamp(64px, 17vw, 88px);
+}
+
+// Four cards fanned around a point below them, gently floating.
+.fan-card {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  margin-left: calc(var(--card-width) / -2);
+  transform-origin: 50% 140%;
+  transform: rotate(calc((var(--i) - 1.5) * 14deg));
+  animation: float 4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.6s);
+}
+
+h1 {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.kicker {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ally);
+}
+
+.title {
+  font-size: clamp(2.6rem, 11vw, 4rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  background: linear-gradient(100deg, #ffffff 20%, var(--ally) 50%, var(--enemy) 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(139, 92, 246, 0.35));
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+// --- Options panel -----------------------------------------------------------------------
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(420px, 100%);
+  padding: 22px;
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.35);
+
+  button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 10px 8px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    transition:
+      background 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
+
+    strong {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    &:hover:not(.selected) {
+      background: var(--glass);
+    }
+
+    &.selected {
+      border-color: rgba(34, 211, 238, 0.6);
+      background: linear-gradient(160deg, rgba(34, 211, 238, 0.22), rgba(139, 92, 246, 0.22));
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.25);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ally);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(100deg, var(--gold), var(--gold-deep));
+  color: #2a1700;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 30px var(--gold-glow),
+    0 8px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s;
+
+  .arrow {
+    transition: transform 0.2s;
+  }
+
+  &:hover .arrow {
+    transform: translateX(5px);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+}
+
+.history-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    color 0.2s;
+
+  &:hover {
+    background: var(--glass);
+    color: var(--text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ally);
+    outline-offset: 2px;
+  }
+
+  .count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--glass-strong);
+    font-size: 0.8rem;
+  }
+}
+
+@keyframes float {
+  50% {
+    translate: 0 -8px;
+  }
+}

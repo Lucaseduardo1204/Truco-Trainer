@@ -1,0 +1,18 @@
+@if (card(); as card) {
+  <div class="face" [class.red]="red()" [class.manilha]="manilhaName()">
+    <span class="corner top">
+      <span class="rank">{{ card.rank }}</span>
+      <span class="suit">{{ symbol() }}</span>
+    </span>
+    <span class="center">{{ symbol() }}</span>
+    @if (manilhaName()) {
+      <span class="manilha-name">{{ manilhaName() }}</span>
+    }
+    <span class="corner bottom">
+      <span class="rank">{{ card.rank }}</span>
+      <span class="suit">{{ symbol() }}</span>
+    </span>
+  </div>
+} @else {
+  <div class="back"><span class="emblem"></span></div>
+}
