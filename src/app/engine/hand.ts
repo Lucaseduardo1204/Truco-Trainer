@@ -38,6 +38,18 @@ export interface SignalEntry {
   readonly seenBy: readonly number[];
 }
 
+/** Answers to "faz a primeira?" ("can you take the first round?"). */
+export type FirstRoundAnswer = 'yes' | 'maybe' | 'no';
+
+export const FIRST_ROUND_ANSWERS: readonly FirstRoundAnswer[] = ['yes', 'maybe', 'no'];
+
+/** A "faz a primeira?" exchange between partners. Spoken: everyone hears it. */
+export interface FirstRoundTalk {
+  readonly askerSeat: number;
+  readonly answererSeat: number;
+  readonly answer: FirstRoundAnswer;
+}
+
 /**
  * normal: regular hand.
  * eleven: `team` is one point from winning ("mão de 11"/"mão de 23").
@@ -72,6 +84,10 @@ export interface HandState {
   readonly pendingBet: PendingBet | null;
   /** Team allowed to ask for the next raise. null = either team (nobody asked yet). */
   readonly raiseHolder: Team | null;
+  /** "Faz a primeira?" waiting for the partner's answer. While set, only that answer is legal. */
+  readonly pendingQuestion: { readonly askerSeat: number; readonly answererSeat: number } | null;
+  /** Every "faz a primeira?" asked and answered in this hand. */
+  readonly talk: readonly FirstRoundTalk[];
   readonly finished: boolean;
   /** Team that won the hand. null while in progress, or if all 3 rounds tied. */
   readonly winner: Team | null;
@@ -106,7 +122,27 @@ export interface SignalAction {
   readonly signal: Signal | null;
 }
 
-export type HandAction = PlayCardAction | RaiseAction | AcceptAction | RunAction | SignalAction;
+/** "Faz a primeira?": asks the partner, before playing a card in the first round. */
+export interface AskFirstAction {
+  readonly type: 'askFirst';
+  readonly seat: number;
+}
+
+/** The partner's answer to "faz a primeira?" (may be a lie). */
+export interface AnswerFirstAction {
+  readonly type: 'answerFirst';
+  readonly seat: number;
+  readonly answer: FirstRoundAnswer;
+}
+
+export type HandAction =
+  | PlayCardAction
+  | RaiseAction
+  | AcceptAction
+  | RunAction
+  | SignalAction
+  | AskFirstAction
+  | AnswerFirstAction;
 
 export function teamOf(seat: number): Team {
   return seat % 2 === 0 ? 0 : 1;
@@ -144,6 +180,8 @@ export function createHand(
     stake: 1,
     pendingBet: null,
     raiseHolder: null,
+    pendingQuestion: null,
+    talk: [],
     finished: false,
     winner: null,
   };
@@ -185,6 +223,12 @@ export function getLegalActions(state: HandState): HandAction[] {
     ];
   }
 
+  // "Faz a primeira?" asked: only the partner answers.
+  if (state.pendingQuestion) {
+    const seat = state.pendingQuestion.answererSeat;
+    return FIRST_ROUND_ANSWERS.map((answer) => ({ type: 'answerFirst', seat, answer }));
+  }
+
   // A bet is waiting: only the responder acts.
   if (state.pendingBet) {
     const seat = state.pendingBet.responderSeat;
@@ -209,7 +253,25 @@ export function getLegalActions(state: HandState): HandAction[] {
   if (mayRaise && nextStake(state.stake) !== null) {
     actions.push({ type: 'raise', seat });
   }
+  if (mayAskFirst(state, seat)) {
+    actions.push({ type: 'askFirst', seat });
+  }
   return actions;
+}
+
+/**
+ * "Faz a primeira?" is allowed in a 2x2 normal hand, in the first round, before the player's
+ * own card, while the partner hasn't played yet, and once per player per hand.
+ */
+function mayAskFirst(state: HandState, seat: number): boolean {
+  const partner = (seat + 2) % 4;
+  return (
+    state.playerCount === 4 &&
+    state.mode.kind === 'normal' &&
+    state.completedRounds.length === 0 &&
+    !state.currentPlays.some((play) => play.seat === partner) &&
+    !state.talk.some((talk) => talk.askerSeat === seat)
+  );
 }
 
 /** Throws if the action is not in getLegalActions(state): the engine is the authority. */
@@ -230,7 +292,21 @@ export function applyAction(state: HandState, action: HandAction): HandState {
       return run(state, action);
     case 'signal':
       return signal(state, action);
+    case 'askFirst':
+      return { ...state, pendingQuestion: { askerSeat: action.seat, answererSeat: (action.seat + 2) % 4 } };
+    case 'answerFirst':
+      return answerFirst(state, action);
   }
+}
+
+/** Records the answer (public) and gives the turn back to the asker. */
+function answerFirst(state: HandState, action: AnswerFirstAction): HandState {
+  const askerSeat = state.pendingQuestion!.askerSeat; // getLegalActions guarantees a pending question
+  return {
+    ...state,
+    pendingQuestion: null,
+    talk: [...state.talk, { askerSeat, answererSeat: action.seat, answer: action.answer }],
+  };
 }
 
 function isSameAction(a: HandAction, b: HandAction): boolean {
@@ -242,6 +318,9 @@ function isSameAction(a: HandAction, b: HandAction): boolean {
   }
   if (a.type === 'signal' && b.type === 'signal') {
     return a.signal === b.signal;
+  }
+  if (a.type === 'answerFirst' && b.type === 'answerFirst') {
+    return a.answer === b.answer;
   }
   return true;
 }

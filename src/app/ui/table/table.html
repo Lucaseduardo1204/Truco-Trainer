@@ -54,6 +54,9 @@
           @if (seat.isStarter) {
             <span class="chip">mão</span>
           }
+          @if (seat.firstRoundAnswer) {
+            <span class="talk-chip" title="Resposta ao 'faz a primeira?'">{{ seat.firstRoundAnswer }}</span>
+          }
         </div>
         @if (seat.bubble) {
           <div class="bubble">{{ seat.bubble }}</div>
@@ -105,6 +108,9 @@
           @if (me.isStarter) {
             <span class="chip">mão</span>
           }
+          @if (me.firstRoundAnswer) {
+            <span class="talk-chip" title="Sua resposta ao 'faz a primeira?'">{{ me.firstRoundAnswer }}</span>
+          }
         </div>
         @if (me.bubble) {
           <div class="bubble">{{ me.bubble }}</div>
@@ -128,6 +134,12 @@
   }
 
   <div class="actions">
+    @for (choice of answerChoices(); track choice.label) {
+      <button type="button" class="btn answer" (click)="act(choice.action)">{{ choice.label }}</button>
+    }
+    @if (askFirstAction(); as ask) {
+      <button type="button" class="btn ask" (click)="act(ask)">🗣️ Faz a primeira?</button>
+    }
     @if (raiseAction(); as raise) {
       <button type="button" class="btn primary raise" (click)="act(raise)">{{ raiseLabel() }}</button>
     }

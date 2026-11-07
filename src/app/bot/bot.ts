@@ -4,6 +4,8 @@
 import { Card, cardStrength, CARDS_PER_HAND, MAX_CARD_STRENGTH } from '../engine/card';
 import {
   AcceptAction,
+  AskFirstAction,
+  FirstRoundAnswer,
   HandAction,
   Play,
   PlayCardAction,
@@ -47,6 +49,10 @@ const SAFETY_MARGIN = 0.1;
 /** Bluffs only make sense when the rivals are unlikely to hold a manilha. */
 const BLUFF_MAX_RIVAL_MANILHA_CHANCE = 0.4;
 
+/** "Faz a primeira?": answer "faço" from this chance of taking the first round, "talvez" from the next. */
+const ANSWER_YES_FROM = 0.6;
+const ANSWER_MAYBE_FROM = 0.35;
+
 export function chooseAction(
   view: PlayerView,
   legal: readonly HandAction[],
@@ -60,6 +66,16 @@ export function chooseAction(
   if (legal[0].type === 'signal') {
     const honest = truthfulSignal(view.ownCards);
     return legal.find((a) => a.type === 'signal' && a.signal === honest) ?? legal[0];
+  }
+  // The partner asked "faz a primeira?": answer honestly.
+  if (legal[0].type === 'answerFirst') {
+    const honest = honestFirstRoundAnswer(view);
+    return legal.find((a) => a.type === 'answerFirst' && a.answer === honest) ?? legal[0];
+  }
+  // Before playing in the first round, ask the partner when the bot can't take it itself.
+  const askFirst = legal.find((a): a is AskFirstAction => a.type === 'askFirst');
+  if (askFirst && firstRoundChance(view) < ANSWER_YES_FROM) {
+    return askFirst;
   }
 
   const chance = winChance(view);
@@ -186,6 +202,40 @@ function rivalSignalPenalty(view: PlayerView): number {
     }
   }
   return penalty;
+}
+
+// --- "Faz a primeira?" ----------------------------------------------------------------------------
+
+/**
+ * Chance that the bot's best card takes the first round: it must beat the rival cards already
+ * on the table (or it's 0) and the rivals still to play (random cards it hasn't seen).
+ */
+function firstRoundChance(view: PlayerView): number {
+  const best = view.ownCards.reduce<Card | null>(
+    (top, card) => (!top || cardStrength(card) > cardStrength(top) ? card : top),
+    null,
+  );
+  if (!best) {
+    return 0;
+  }
+  const rivalPlays = view.currentPlays.filter((p) => teamOf(p.seat) !== view.team);
+  if (rivalPlays.some((p) => cardStrength(p.card) >= cardStrength(best))) {
+    return 0;
+  }
+  return cardWinChance(view, best, view.playerCount / 2 - rivalPlays.length);
+}
+
+function honestFirstRoundAnswer(view: PlayerView): FirstRoundAnswer {
+  const chance = firstRoundChance(view);
+  if (chance >= ANSWER_YES_FROM) {
+    return 'yes';
+  }
+  return chance >= ANSWER_MAYBE_FROM ? 'maybe' : 'no';
+}
+
+/** What the partner answered when this bot asked "faz a primeira?" in this hand, if it did. */
+function partnerFirstRoundAnswer(view: PlayerView): FirstRoundAnswer | null {
+  return view.talk.find((talk) => talk.askerSeat === view.seat)?.answer ?? null;
 }
 
 // --- Betting -------------------------------------------------------------------------------------
@@ -325,6 +375,7 @@ function lead(view: PlayerView, weakestFirst: readonly PlayCardAction[]): PlayCa
   const strongest = weakestFirst[weakestFirst.length - 1];
 
   // First round: a middle card, keeping the best one for when it decides.
+  // (Arena: changing the opening card after "faço"/"não faço" made the bot worse in 2x2.)
   if (view.completedRounds.length === 0) {
     return weakestFirst[Math.floor((weakestFirst.length - 1) / 2)];
   }
@@ -342,6 +393,11 @@ function follow(view: PlayerView, weakestFirst: readonly PlayCardAction[]): Play
   // Partner already winning the round. (Arena: also holding back when the partner, still to
   // play, had announced a covering card cost ~4 points in 2x2; announced cards aren't certain.)
   if (teamOf(best.seat) === view.team) {
+    return weakest;
+  }
+  // First round, partner still to play and said "faço": let them take it.
+  const partnerStillToPlay = view.playerCount === 4 && !view.currentPlays.some((p) => p.seat === (view.seat + 2) % 4);
+  if (view.completedRounds.length === 0 && partnerStillToPlay && partnerFirstRoundAnswer(view) === 'yes') {
     return weakest;
   }
   // Cheapest card that wins the round.

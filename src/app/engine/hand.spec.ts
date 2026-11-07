@@ -356,3 +356,42 @@ describe('hand: signal round (2x2)', () => {
     expect(createHand(4, cards, 0).signalingSeat).toBeNull();
   });
 });
+
+describe('hand: "faz a primeira?" (2x2)', () => {
+  const cards = [['K♣', 'Q♣', 'J♣'], ['3♥', 'K♥', 'Q♥'], ['4♣', 'J♥', 'Q♠'], ['2♦', 'K♦', 'Q♦']].map((h) => h.map(c));
+  const start = createHand(4, cards, 0);
+  const ask = (state: HandState) => applyAction(state, { type: 'askFirst', seat: 0 });
+
+  it('can be asked before the first card, by the player whose turn it is', () => {
+    expect(getLegalActions(start)).toContainEqual({ type: 'askFirst', seat: 0 });
+  });
+
+  it('only the partner can answer while the question is pending: faço, talvez, não faço', () => {
+    expect(getLegalActions(ask(start))).toEqual([
+      { type: 'answerFirst', seat: 2, answer: 'yes' },
+      { type: 'answerFirst', seat: 2, answer: 'maybe' },
+      { type: 'answerFirst', seat: 2, answer: 'no' },
+    ]);
+  });
+
+  it('the answer is recorded and the turn goes back to the asker, who cannot ask again', () => {
+    const answered = applyAction(ask(start), { type: 'answerFirst', seat: 2, answer: 'yes' });
+    expect(answered.talk).toEqual([{ askerSeat: 0, answererSeat: 2, answer: 'yes' }]);
+    expect(currentSeat(answered)).toBe(0);
+    expect(getLegalActions(answered).some((a) => a.type === 'askFirst')).toBe(false);
+  });
+
+  it('not once the partner has played, and not after the first round', () => {
+    // Seat 0, 1 play; seat 2's partner (seat 0) already played: seat 2 cannot ask.
+    const afterTwo = play(start, 'K♣', '3♥');
+    expect(getLegalActions(afterTwo).some((a) => a.type === 'askFirst')).toBe(false);
+    const roundTwo = play(start, 'K♣', '3♥', '4♣', '2♦');
+    expect(getLegalActions(roundTwo).some((a) => a.type === 'askFirst')).toBe(false);
+  });
+
+  it('not in 1x1 or in a mão de 11', () => {
+    expect(getLegalActions(hand1x1(['K♣', 'Q♣', 'J♣'], ['3♥', 'K♥', 'Q♥'])).some((a) => a.type === 'askFirst')).toBe(false);
+    const eleven = applyAction(createHand(4, cards, 0, { kind: 'eleven', team: 0 }), { type: 'accept', seat: 0 });
+    expect(getLegalActions(eleven).some((a) => a.type === 'askFirst')).toBe(false);
+  });
+});

@@ -1,7 +1,7 @@
 // Pure TypeScript: no Angular imports allowed in src/app/engine.
 
 import { Card, PlayerCount } from './card';
-import { HandMode, PendingBet, Play, Round, Stake, Team, teamOf } from './hand';
+import { FirstRoundTalk, HandMode, HandState, PendingBet, Play, Round, Stake, Team, teamOf } from './hand';
 import { MatchState, TargetScore } from './match';
 import { announcedCards, Signal, signalMatchesCard } from './signals';
 
@@ -38,6 +38,10 @@ export interface PlayerView {
   readonly knownSignals: readonly KnownSignal[];
   /** Seats that asked for truco (or raised) in this hand, in order. Public: everyone hears it. */
   readonly raisedBy: readonly number[];
+  /** "Faz a primeira?" waiting for an answer. Public. */
+  readonly pendingQuestion: HandState['pendingQuestion'];
+  /** Every "faz a primeira?" answered in this hand. Public: it's spoken out loud. */
+  readonly talk: readonly FirstRoundTalk[];
   readonly handFinished: boolean;
   /** null while in progress, or if all 3 rounds tied. */
   readonly handWinner: Team | null;
@@ -100,6 +104,8 @@ export function getPlayerView(match: MatchState, seat: number): PlayerView {
     raisedBy: match.history
       .filter((entry) => entry.handNumber === match.handNumber && entry.action.type === 'raise')
       .map((entry) => entry.action.seat),
+    pendingQuestion: hand.pendingQuestion,
+    talk: hand.talk,
     handFinished: hand.finished,
     handWinner: hand.winner,
     matchFinished: match.finished,

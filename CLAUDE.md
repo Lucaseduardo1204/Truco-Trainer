@@ -72,6 +72,12 @@ UI 1x1/2x2, sinais). Não adiante nada das fases seguintes.
   pede truco por conta própria). Mentir é permitido. O parceiro
   sempre vê; cada rival tem 25% de chance de flagrar. Quem flagra o quê é
   sorteado pela seed na hora de dar as cartas (motor segue determinístico).
+- **"Faz a primeira?" (só 2x2, só mão normal):** na 1ª rodada, na própria
+  vez e antes de jogar a carta, com o parceiro ainda sem jogar, dá pra
+  perguntar ao parceiro. Ele responde na hora: faço / talvez / não faço (pode
+  mentir); a vez volta pra quem perguntou. Cada jogador pergunta no máximo
+  1x por mão. É falado: todos ouvem pergunta e resposta. Bots também
+  perguntam e respondem.
 - **Formato:** 1x1 e 2x2 (parceiro bot). Motor genérico pra 2 ou 4
   jogadores desde o início; entregar 1x1 jogável primeiro, 2x2 em seguida.
 - **Quem é mão:** a 1ª mão da partida é sorteada (pela seed); depois roda
@@ -167,6 +173,11 @@ Consequências práticas:
     parceiro "cobre" pelo sinal.
   - Deixa comigo: se os dois parceiros disseram, o bot joga pelo próprio
     julgamento (senão ninguém tentaria ganhar).
+  - "Faz a primeira?": o bot responde com a verdade (faço ≥ 60% de ganhar a
+    1ª com a melhor carta, talvez ≥ 35%, senão não faço) e pergunta quando
+    ele mesmo não chega a 60%. Única reação: se o parceiro, que ainda vai
+    jogar, disse "faço", não gasta carta na 1ª rodada. Testado e rejeitado
+    na arena: mudar a carta de abertura conforme a resposta.
   - Arena atual contra o baseline: até 12 ~61% (1x1) / ~65% (2x2); até 24
     ~69% / ~64%.
 

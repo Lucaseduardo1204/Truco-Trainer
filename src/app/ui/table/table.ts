@@ -3,6 +3,9 @@ import { Router } from '@angular/router';
 import { Card, CARDS_PER_HAND, cardStrength, isSameCard, Suit } from '../../engine/card';
 import {
   AcceptAction,
+  AnswerFirstAction,
+  AskFirstAction,
+  FirstRoundAnswer,
   HandAction,
   nextStake,
   PlayCardAction,
@@ -46,6 +49,12 @@ const SUIT_NAMES: Record<Suit, string> = {
 };
 
 const STAKE_NAMES: Record<Stake, string> = { 1: '', 3: 'Truco', 6: 'Seis', 9: 'Nove', 12: 'Doze' };
+
+/** How each answer to "faz a primeira?" is said at the table. */
+const ANSWER_TEXT: Record<FirstRoundAnswer, string> = { yes: 'Faço!', maybe: 'Talvez…', no: 'Não faço' };
+
+/** The same answer as a short tag next to the player. */
+const ANSWER_CHIP: Record<FirstRoundAnswer, string> = { yes: 'faço', maybe: 'talvez', no: 'não faço' };
 
 interface SignalInfo {
   readonly emoji: string;
@@ -97,6 +106,8 @@ interface SeatInfo {
   readonly bubble: string | null;
   /** The signal this seat made this hand, if the human knows it. */
   readonly signal: SeatSignal | null;
+  /** This seat's answer to "faz a primeira?", shown during the first round. */
+  readonly firstRoundAnswer: string | null;
 }
 
 interface TablePlay {
@@ -145,6 +156,19 @@ export class Table {
   );
 
   /** Signal buttons, during the signal round when it's the human's turn. */
+  /** "Faz a primeira?" button, when the engine allows asking. */
+  protected readonly askFirstAction = computed(() =>
+    this.game.myActions().find((a): a is AskFirstAction => a.type === 'askFirst'),
+  );
+
+  /** Answer buttons, when the partner asked the human "faz a primeira?". */
+  protected readonly answerChoices = computed(() =>
+    this.game
+      .myActions()
+      .filter((a): a is AnswerFirstAction => a.type === 'answerFirst')
+      .map((action) => ({ action, label: ANSWER_TEXT[action.answer] })),
+  );
+
   protected readonly signalChoices = computed((): SignalChoice[] =>
     this.game
       .myActions()
@@ -182,6 +206,7 @@ export class Table {
         isActing: this.game.actingSeat() === seat,
         bubble: bubble?.seat === seat ? bubble.text : null,
         signal: this.seatSignal(view, seat),
+        firstRoundAnswer: this.firstRoundAnswerOf(view, seat),
       });
     }
     return seats;
@@ -285,6 +310,16 @@ export class Table {
     const view = this.view();
     if (!view || view.handFinished) {
       return '';
+    }
+    if (view.pendingQuestion) {
+      const { askerSeat, answererSeat } = view.pendingQuestion;
+      if (answererSeat === HUMAN_SEAT) {
+        return `${this.nameOf(askerSeat)} pergunta: faz a primeira?`;
+      }
+      if (askerSeat === HUMAN_SEAT) {
+        return `Você perguntou se ${this.nameOf(answererSeat).toLowerCase()} faz a primeira…`;
+      }
+      return `${this.nameOf(askerSeat)} pergunta pro ${this.nameOf(answererSeat)}: faz a primeira?`;
     }
     if (view.signalingSeat !== null) {
       return view.signalingSeat === HUMAN_SEAT
@@ -392,6 +427,12 @@ export class Table {
     if (!view || !last || last.type === 'playCard') {
       return null;
     }
+    if (last.type === 'askFirst') {
+      return { seat: last.seat, text: 'Faz a primeira?' };
+    }
+    if (last.type === 'answerFirst') {
+      return { seat: last.seat, text: ANSWER_TEXT[last.answer] };
+    }
     if (last.type === 'signal') {
       // Only signals the human knows about (own, partner's, caught rivals').
       const known = view.knownSignals.find((s) => s.seat === last.seat);
@@ -410,6 +451,15 @@ export class Table {
     const requested = view.pendingBet?.callerSeat === last.seat ? view.pendingBet.requested : 3;
     return { seat: last.seat, text: `${STAKE_NAMES[requested]}!` };
   });
+
+  /** "Faço" / "Talvez" / "Não faço" next to whoever answered, while the first round lasts. */
+  private firstRoundAnswerOf(view: PlayerView, seat: number): string | null {
+    if (view.completedRounds.length > 0) {
+      return null;
+    }
+    const talk = view.talk.find((t) => t.answererSeat === seat);
+    return talk ? ANSWER_CHIP[talk.answer] : null;
+  }
 
   private seatSignal(view: PlayerView, seat: number): SeatSignal | null {
     const known = view.knownSignals.find((s) => s.seat === seat);

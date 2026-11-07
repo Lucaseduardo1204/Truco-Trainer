@@ -332,3 +332,37 @@ describe('bot: both partners said "deixa comigo"', () => {
     expect(action).toEqual({ type: 'playCard', seat: 2, card: c('7♥') });
   });
 });
+
+describe('bot: "faz a primeira?"', () => {
+  const four = [['K♣', 'Q♣', 'J♣'], ['3♥', 'K♥', 'Q♥'], ['4♣', 'J♥', 'Q♠'], ['2♦', 'K♦', 'Q♦']];
+
+  it('answers honestly: "faço" holding the zap, "não faço" with small cards', () => {
+    const asked = withActions(matchWith(four), { type: 'askFirst', seat: 0 });
+    expect(botMove(asked, 2)).toEqual({ type: 'answerFirst', seat: 2, answer: 'yes' });
+
+    const weak = [['4♣', 'Q♣', 'J♣'], ['3♥', 'K♥', 'Q♥'], ['K♣', 'J♥', 'Q♠'], ['2♦', 'K♦', 'Q♦']];
+    const askedWeak = withActions(matchWith(weak), { type: 'askFirst', seat: 0 });
+    expect(botMove(askedWeak, 2)).toEqual({ type: 'answerFirst', seat: 2, answer: 'no' });
+  });
+
+  it('asks when it cannot take the first round itself, not when it holds the zap', () => {
+    expect(botMove(matchWith(four), 0)).toEqual({ type: 'askFirst', seat: 0 });
+    const strong = [['4♣', 'Q♣', 'J♣'], ['3♥', 'K♥', 'Q♥'], ['K♣', 'J♥', 'Q♠'], ['2♦', 'K♦', 'Q♦']];
+    expect(botMove(matchWith(strong), 0).type).not.toBe('askFirst');
+  });
+
+  it('after the partner said "faço", does not spend a card on the first round', () => {
+    // Seat 1 asks seat 3; seat 3 says "faço". Seat 0 opened with K♣; seat 1 holds 3♥ (could win)
+    // but its partner (seat 3) still plays after it and said "faço": seat 1 throws its smallest.
+    const four2 = [['K♣', 'Q♣', 'J♣'], ['3♥', 'K♥', 'Q♥'], ['J♠', 'J♥', 'Q♠'], ['4♣', 'K♦', 'Q♦']];
+    const match = withActions(
+      matchWith(four2),
+      { type: 'playCard', seat: 0, card: c('K♣') },
+      { type: 'askFirst', seat: 1 },
+      { type: 'answerFirst', seat: 3, answer: 'yes' },
+    );
+    const plays = getLegalActions(match.hand).filter((a) => a.type === 'playCard');
+    const action = chooseAction(getPlayerView(match, 1), plays, NO_BLUFF, createRng(1));
+    expect(action).toEqual({ type: 'playCard', seat: 1, card: c('Q♥') });
+  });
+});
